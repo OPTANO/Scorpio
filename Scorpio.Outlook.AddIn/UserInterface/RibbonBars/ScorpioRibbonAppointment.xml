@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="Ribbon_Load">
+  <ribbon>
+    <tabs>
+      <tab id="ScorpioAppointment" label="SCORPIO Eintrag">
+        <group id ="ScorpioAppointmentTab" label="Ticketauswahl">
+          <button id="selectTicket" label="Ticketwahl öffnen" onAction="OnSelectTicket"  getImage="GetImageForAppointmentRibbon" size="large" screentip="Öffnet das Control zur Auswahl eines Tickets"></button>
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
+

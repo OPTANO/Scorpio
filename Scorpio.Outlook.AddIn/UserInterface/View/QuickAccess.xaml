@@ -1,0 +1,29 @@
+<UserControl x:Class="Scorpio.Outlook.AddIn.UserInterface.View.QuickAccess"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:viewModel="clr-namespace:Scorpio.Outlook.AddIn.UserInterface.ViewModel"
+             xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance viewModel:ScorpioTaskPaneViewModel, IsDesignTimeCreatable=True}"
+             d:DesignHeight="300" d:DesignWidth="300">
+    
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="..\Resources\Resources.xaml"></ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    
+    <Grid x:Name="ContainerGrid">
+        <dxb:ToolBarControl Orientation="{Binding ElementName=ContainerGrid, Path=ActualWidth, ConverterParameter=150, Converter={StaticResource TaskPaneWidthToVisibilityOrientationConverter}}" AllowQuickCustomization="False" AllowCustomizationMenu="False" IsMultiLine="True" RotateWhenVertical="False" BarItemDisplayMode="ContentAndGlyph">
+            <dxb:BarButtonItem Content="Aus-/Ein- klappen" GlyphAlignment="Top" Command="{Binding ToggleExpansionCommand}" LargeGlyph="/Scorpio.Outlook.AddIn;component/Resources/application_side_expand.png" RibbonStyle="Large"/>
+            <dxb:BarButtonItem Content="Synchronisiere Redmine" GlyphAlignment="Top" Command="{Binding SynchronizeRedmineCommand}" LargeGlyph="/Scorpio.Outlook.AddIn;component/Resources/arrow_refresh.png" RibbonStyle="Large"/>
+            <dxb:BarButtonItem Content="Zeiteinträge zurücksetzen" GlyphAlignment="Top" Command="{Binding ResetTimeEntriesCommand}" LargeGlyph="/Scorpio.Outlook.AddIn;component/Resources/arrow_undo.png" RibbonStyle="Large"/>
+            <dxb:BarButtonItem Content="Zeiteinträge speichern" GlyphAlignment="Top" Command="{Binding SaveTimeEntriesCommand}" LargeGlyph="/Scorpio.Outlook.AddIn;component/Resources/diskette.png" RibbonStyle="Large"/>
+            <dxb:BarButtonItem Content="Kalender anzeigen" GlyphAlignment="Top" Command="{Binding OpenCalendarCommand}" LargeGlyph="/Scorpio.Outlook.AddIn;component/Resources/calendar.png" RibbonStyle="Large"/>
+        </dxb:ToolBarControl>
+    </Grid>
+</UserControl>

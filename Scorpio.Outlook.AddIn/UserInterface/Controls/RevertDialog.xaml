@@ -1,0 +1,53 @@
+﻿<dx:DXWindow
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:controls="clr-namespace:Scorpio.Outlook.AddIn.UserInterface.Controls"
+        xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+             xmlns:dx="clr-namespace:DevExpress.Xpf.Core;assembly=DevExpress.Xpf.Core.v15.1"
+             x:Class="Scorpio.Outlook.AddIn.UserInterface.Controls.RevertDialog"
+        mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300" SizeToContent="Height" Width="400" Title="Synchronisation"
+        d:DataContext="{d:DesignInstance {x:Type controls:RevertDialog}}"
+        dx:ThemeManager.ThemeName="Office2013">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="..\Resources\Resources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Style="{StaticResource DialogHeader}" Grid.Row="0"><Run Text="Achtung: Der Zeitbuchungskalender wird auf den Redmine-Stand zurück gesetzt. Ungespeicherte Änderungen gehen dabei verloren. Der Synchronisationszeitraum kann angepasst werden:"/></TextBlock>
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="0"><Run Text="Start"/></TextBlock>
+            <TextBlock Grid.Row="0" Grid.Column="1"><Run Text="Ende"/></TextBlock>
+            <dxe:DateEdit Grid.Row="1" Grid.Column="0" EditValue="{Binding StartDate}" MaxValue="{Binding EndDate}"/>
+            <dxe:DateEdit Grid.Row="1" Grid.Column="1" EditValue="{Binding EndDate}" MinValue="{Binding StartDate}"/>
+        </Grid>
+
+        <WrapPanel Grid.Row="4" HorizontalAlignment="Right">
+            <Button Style="{StaticResource DialogButton}" Click="CancelClicked" Content="Abbrechen"/>
+            <Button Style="{StaticResource DialogButton}" Click="OkClicked" Content="OK"/>
+        </WrapPanel>
+    </Grid>
+</dx:DXWindow>

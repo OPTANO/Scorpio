@@ -1,0 +1,121 @@
+﻿<dx:DXWindow xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors" 
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Scorpio.Outlook.AddIn.UserInterface.Controls"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             x:Class="Scorpio.Outlook.AddIn.UserInterface.Controls.SettingsEditorDialog"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance {x:Type local:SettingsEditorDialog}}"
+             d:DesignHeight="400" d:DesignWidth="400" dx:ThemeManager.ThemeName="Office2013" Height="600" Width="600" Title="Einstellungen">
+
+    <dxlc:LayoutControl Orientation="Vertical" VerticalAlignment="Stretch">
+        <dxlc:LayoutGroup View="Tabs" SelectedTabIndex="1" HorizontalAlignment="Stretch">
+
+            <dxlc:LayoutGroup Header="Einstellungen" Orientation="Vertical">
+                <dxlc:LayoutItem Label="Redmine URL" LabelPosition="Top">
+                    <dxe:TextEdit Text="{Binding RedmineUrl}"/>
+                </dxlc:LayoutItem>
+                <dxlc:LayoutItem Label="Redmine API Key" LabelPosition="Top">
+                    <dxe:TextEdit Text="{Binding RedmineApiKey}"/>
+                </dxlc:LayoutItem>
+                <dxlc:LayoutItem Label="Refresh-Zeit in Sekunden" LabelPosition="Top">
+                    <dxe:TextEdit Text="{Binding RefreshTime}"/>
+                </dxlc:LayoutItem>
+                <dxlc:LayoutItem Label="Maximale Anzahl Issues für Neuladen" LabelPosition="Top">
+                    <dxe:TextEdit Text="{Binding NumberIssues}"/>
+                </dxlc:LayoutItem>
+                <dxlc:LayoutItem Label="Maximale Anzahl zuletzt verwendeter Issues" LabelPosition="Top">
+                    <dxe:TextEdit Text="{Binding NumberIssuesLastUsed}"/>
+                </dxlc:LayoutItem>
+                <dxlc:LayoutItem>
+                    <Button Click="ClearIssueCache_OnClick">Issuecache leeren</Button>
+                </dxlc:LayoutItem>
+            </dxlc:LayoutGroup>
+
+            <dxlc:LayoutGroup Header="Favoriten" Orientation="Vertical">
+                <dxlc:LayoutItem Label="Ticket hinzufügen" LabelPosition="Top">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"></ColumnDefinition>
+                            <ColumnDefinition Width="Auto"></ColumnDefinition>
+                        </Grid.ColumnDefinitions>
+                        <dxg:LookUpEdit
+                    FilterCondition = "Contains"
+                    FindButtonPlacement = "None"
+                    NullValueButtonPlacement = "None"
+                    AddNewButtonPlacement = "None"
+                    FindMode = "Always"
+                    ShowSizeGrip = "True"
+                    ItemsSource="{Binding AvailableIssues}"
+                    EditValue="{Binding SelectedIssue}"
+                    AutoPopulateColumns="False"
+                    DisplayMember="DisplayValue">
+                            <dxg:LookUpEdit.StyleSettings>
+                                <dxg:SearchLookUpEditStyleSettings />
+                            </dxg:LookUpEdit.StyleSettings>
+                            <dxg:LookUpEdit.PopupContentTemplate>
+                                <ControlTemplate>
+                                    <dxg:GridControl AutoExpandAllGroups="True" Name="PART_GridControl">
+                                        <dxg:GridControl.Columns>
+                                            <dxg:GridColumn Header="Projekt" Binding="{Binding Name}" GroupIndex="0"/>
+                                            <dxg:GridColumn Header="Ticket" Binding="{Binding DisplayValue}"/>
+                                        </dxg:GridControl.Columns>
+                                        <dxg:GridControl.View>
+                                            <dxg:TableView
+                                        AutoWidth="True"
+                                        AllowPerPixelScrolling="True"
+                                        ScrollAnimationDuration="0"
+                                        ShowTotalSummary="False"
+                                        IsSynchronizedWithCurrentItem="True"
+                                                        >
+                                            </dxg:TableView>
+                                        </dxg:GridControl.View>
+                                    </dxg:GridControl>
+                                </ControlTemplate>
+                            </dxg:LookUpEdit.PopupContentTemplate>
+                        </dxg:LookUpEdit>
+                        <Button Grid.Column="1" Click="AddFavorite_OnClick">+</Button>
+                    </Grid>
+
+                </dxlc:LayoutItem>
+                <dxlc:LayoutItem LabelPosition="Top" Label="Favoriten" VerticalAlignment="Stretch">
+                    <dxg:GridControl AutoExpandAllGroups="True" MinHeight="300" VerticalAlignment="Stretch" ItemsSource="{Binding FavoriteIssues}">
+                        <dxg:GridControl.Columns>
+                            <dxg:GridColumn AllowBestFit="True" Header="Projekt" Binding="{Binding Name}"/>
+                            <dxg:GridColumn AllowBestFit="True" Header="Ticket" Binding="{Binding DisplayValue}"/>
+                            <dxg:GridColumn FixedWidth="True" Width="40" Header=" ">
+                                <dxg:GridColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding View.DataContext.RemoveFavoriteCommand}" CommandParameter="{Binding RowData.Row}">X</Button>
+                                    </DataTemplate>
+                                </dxg:GridColumn.CellTemplate>
+                            </dxg:GridColumn>
+                        </dxg:GridControl.Columns>
+                        <dxg:GridControl.View>
+                            <dxg:TableView
+                                    AllowGrouping="False"
+                                    AutoWidth="True"
+                                    AllowBestFit="True"
+                                    AllowPerPixelScrolling="True"
+                                    ScrollAnimationDuration="0"
+                                    ShowTotalSummary="False"
+                                    IsSynchronizedWithCurrentItem="True" ShowGroupPanel="False">
+                            </dxg:TableView>
+                        </dxg:GridControl.View>
+                    </dxg:GridControl>
+                </dxlc:LayoutItem>
+            </dxlc:LayoutGroup>
+        </dxlc:LayoutGroup>
+        <dxlc:LayoutItem>
+            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Click="Ok_OnClick">Ok</Button>
+                <Button Click="Cancel_OnClick">Abbrechen</Button>
+            </WrapPanel>
+
+        </dxlc:LayoutItem>
+    </dxlc:LayoutControl>
+
+</dx:DXWindow>

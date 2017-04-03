@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="Ribbon_Load">
+  <ribbon>
+    <tabs>
+      <tab id="ScorpioTab" label="SCORPIO">
+        <group id="connection" label="Redmine">
+          <button id="showSettings" label="Einstellungen" onAction="OnShowSettings" size="large" getImage="GetRibbonImage" screentip="Einstellungen für das Plugin."/>
+          <button id="connectRedmine" getLabel="GetConnectLabelText" onAction="OnConnect" size="large" getImage="GetRibbonImage" getEnabled="GetConnectEnabled" screentip="Ruft Projekt und Ticketinformationen aus Redmine ab."/>
+          <button id="resetTimeEntries" label="Zeiteinträge zurücksetzen" onAction="OnResetTimeEntries" getImage="GetRibbonImage" size="large" getEnabled="GetConnectEnabled" screentip="Setzt die Zeiteinträge im Zeitraum der im Kalender angezeigt wird auf den Redmine Status zurück. Lokale Änderungen werden verworfen."/>
+          <button id="saveTimeEntries" label="Zeiteinträge speichern" onAction="OnSaveTimeEntries" getImage="GetRibbonImage" size="large" getEnabled="GetConnectEnabled" screentip="Speichert die Änderungen die an Zeiteinträgen vorgenommen wurden und holt geänderte Zeiteinträge aus Redmine."/>
+          <button id="showTaskPane" label="Seitenleiste anzeigen" onAction="OnShowTaskpane" getImage="GetRibbonImage" size="large" screentip="Zeigt die SCORPIO Seitenleiste"/>
+          <button id="showCalendar" label="Kalender anzeigen" onAction="OnShowCalendar" getImage="GetRibbonImage" size="large" screentip="Zeigt den Kalender für die Zeitbuchungen"/>
+        </group>
+        <group id="timeEntryGroup" label="Zeiteinträge erstellen">
+          <button id="createSingle" label="Einfacher Zeiteintrag" onAction="OnCreateSingle" getImage="GetRibbonImage" size="large" screentip="Erstellt eine neue Zeitbuchung und öffnet die Terminansicht."/>
+          <button id="createRecurring" label="Wiederholende Zeiteinträge" onAction="OnCreateRecurring" getImage="GetRibbonImage" size="large" screentip="Ermöglicht, Serienbuchungen zu erstellen, z.B. für Urlaub, Krankheit, Abwesenheit etc."/>
+        </group>
+        <group id="reportGroup" label="Stundenreport">
+          <button id="createreport" label ="Stundenreport erstellen" onAction="OnReport" size="large" getImage="GetRibbonImage" getEnabled="GetConnectEnabled" />
+        </group>
+        <group id="statusGroup" label="Status">
+          <labelControl id="statusLabel" getLabel="GetStatusLabel" />
+          <labelControl id="hoursLabel" getLabel="GetStatusLabel" />
+        </group>
+        <group id="versionGroup" label="Version">
+          <labelControl id="versionLabel" getLabel="GetVersionLabel" />
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
+

@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="Ribbon_Load">
+  <ribbon>
+  </ribbon>
+  <contextMenus>
+    <contextMenu idMso="ContextMenuMailItem">
+      <button id="SynchronizeMailItem" onAction="ShowMessageClick" getImage="GetIcon" getLabel="GetSynchronisationLabel"/>
+    </contextMenu>
+  </contextMenus>
+</customUI>

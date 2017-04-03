@@ -1,0 +1,36 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Scorpio.Outlook.AddIn.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="RedmineApiKey" Provider="Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider" Type="System.String" Scope="User">
+      <Value Profile="(Default)">0a074de714f3ddee51d64cd8c8a0722846bf535d</Value>
+    </Setting>
+    <Setting Name="RedmineURL" Provider="Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider" Type="System.String" Scope="User">
+      <Value Profile="(Default)">192.168.0.93</Value>
+    </Setting>
+    <Setting Name="RedmineHolidayIssue" Provider="Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">80</Value>
+    </Setting>
+    <Setting Name="RedmineUseOvertimeIssue" Provider="Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">82</Value>
+    </Setting>
+    <Setting Name="LastIssueSyncDate" Provider="Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider" Type="System.DateTime" Scope="User">
+      <Value Profile="(Default)">1900-01-01</Value>
+    </Setting>
+    <Setting Name="LastUsedIssues" Provider="Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="FavoriteIssues" Provider="Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="RefreshTime" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">30</Value>
+    </Setting>
+    <Setting Name="LimitForIssueNumber" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">100</Value>
+    </Setting>
+    <Setting Name="NumberLastUsedIssues" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">15</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
