@@ -149,11 +149,11 @@ namespace Scorpio.Outlook.AddIn.Synchronization
             var predicateToUse = new Predicate<AppointmentItem>(
                                      ai =>
                                          {
-                                             var issueId = ai.GetAppointmentCustomId(Constants.FieldRedmineIssueId);
-                                             var value = issueId.HasValue && issueId != OverTimeIssueId;
+                                             var value = predicate == null || predicate(ai);
                                              if (value)
                                              {
-                                                 value = predicate == null || predicate(ai);
+                                                 var issueId = ai.GetIssueId();
+                                                 value = issueId.HasValue && issueId != OverTimeIssueId;
                                              }
                                              return value;
                                          });
@@ -279,31 +279,39 @@ namespace Scorpio.Outlook.AddIn.Synchronization
              * to provide a callback for change of the displayed dates in the calendar view:
              * http://stackoverflow.com/questions/32693475/outlook-2013-vsto-get-calendar-selected-range-callback
              */
-
-            // get dates and check if there are any selected, else nothing to do here
-            var dates = Globals.ThisAddIn.CalendarState.GetDisplayDates();
-            if (dates == null || dates.Length == 0)
+             this._updateTimer.Stop();
+            try
             {
-                return;
+                // get dates and check if there are any selected, else nothing to do here
+                var dates = Globals.ThisAddIn.CalendarState.GetDisplayDates();
+                if (dates == null || dates.Length == 0)
+                {
+                    return;
+                }
+
+                // get min and max date and compare them to the last min and max date stored
+                var currentMinDate = dates.Min();
+                var currentMaxDate = dates.Max();
+
+                if (object.Equals(currentMinDate, this._minDateDisplayed) && object.Equals(currentMaxDate, this._maxDateDisplayed))
+                {
+                    // nothing changed, nothing to do
+                }
+                else
+                {
+                    // at least one of the two dates changed, update their values and recalculate
+                    this._minDateDisplayed = currentMinDate;
+                    this._maxDateDisplayed = currentMaxDate;
+
+                    // call the method to update the values in the ui
+                    this.UpdateHoursInView(this._minDateDisplayed.Value, this._maxDateDisplayed.Value);
+                }
             }
-
-            // get min and max date and compare them to the last min and max date stored
-            var currentMinDate = dates.Min();
-            var currentMaxDate = dates.Max();
-
-            if (object.Equals(currentMinDate, this._minDateDisplayed) && object.Equals(currentMaxDate, this._maxDateDisplayed))
+            finally
             {
-                // nothing changed, nothing to do
+                this._updateTimer.Start();
             }
-            else
-            {
-                // at least one of the two dates changed, update their values and recalculate
-                this._minDateDisplayed = currentMinDate;
-                this._maxDateDisplayed = currentMaxDate;
-
-                // call the method to update the values in the ui
-                this.UpdateHoursInView(this._minDateDisplayed.Value, this._maxDateDisplayed.Value);
-            }
+         
         }
         
         #endregion

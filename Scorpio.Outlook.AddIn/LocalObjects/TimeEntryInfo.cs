@@ -68,21 +68,5 @@ namespace Scorpio.Outlook.AddIn.LocalObjects
         /// Gets or sets the end date time
         /// </summary>
         public DateTime EndDateTime { get; set; }
-
-        /// <summary>Returns a string that represents the current object.</summary>
-        /// <returns>A string that represents the current object.</returns>
-        /// <filterpriority>2</filterpriority>
-        public override string ToString()
-        {
-            var stringRepresentation = string.Format(
-                        "{5}: {2}, {3}, {4}, {0} - {1}",
-                        this.StartDateTime,
-                        this.EndDateTime,
-                        this.IssueInfo,
-                        this.ProjectInfo,
-                        this.ActivityInfo,
-                        this.Id);
-            return stringRepresentation;
-        }
     }
 }

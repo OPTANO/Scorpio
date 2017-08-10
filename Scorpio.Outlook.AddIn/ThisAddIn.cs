@@ -152,24 +152,6 @@ namespace Scorpio.Outlook.AddIn
             this.Synchronizer.InitializeRedmineNew();
         }
 
-        /// <summary>
-        /// Toggles the size of the custom task pane between a collapsed state and an expanded state.
-        /// </summary>
-        public void ToggleTaskpaneSize()
-        {
-            if (this._customTaskPane.Width > 150)
-            {
-                // Set to the smallest possible size
-                this._customTaskPane.Width = 110;
-            }
-            else
-            {
-                this._customTaskPane.Width = 390;
-                // if the bar is expanded, update the time values
-                this.UiUserInfoSynchronizer.HandleAppointmentChange(this, new EventArgs());
-            }
-        }
-
         #endregion
 
         /// <summary>
@@ -268,8 +250,7 @@ namespace Scorpio.Outlook.AddIn
                 this._customTaskPane.DockPositionRestrict = Office.MsoCTPDockPositionRestrict.msoCTPDockPositionRestrictNoChange;
                 this._customTaskPane.DockPosition = Office.MsoCTPDockPosition.msoCTPDockPositionRight;
                 this._customTaskPane.Visible = true;
-                this._customTaskPane.Width = 110;
-
+                this._customTaskPane.Width = 118;
                 this.ScorpioViewModel = new ScorpioTaskPaneViewModel();
                 taskPaneContainer.TaskPane.DataContext = this.ScorpioViewModel;
             }
@@ -287,11 +268,11 @@ namespace Scorpio.Outlook.AddIn
         {
             try
             {
-                var wnd = new OfficeWin32Window(Globals.ThisAddIn.Application.ActiveWindow());
+                // create dialog and show it
                 var dialog = new SettingsEditorDialog();
-                var wih = new WindowInteropHelper(dialog) { Owner = wnd.Handle };
                 dialog.ShowDialog();
 
+                // handle positive result from closing the dialog
                 if (dialog.DialogResult.HasValue && dialog.DialogResult.Value)
                 {
                     Globals.ThisAddIn.ReconnectToRedmine();

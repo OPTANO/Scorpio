@@ -55,6 +55,7 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
         /// <param name="limitForNumberIssues">the limit to use for the number of issues to download</param>
         private ExternalDataSourceFactory(string address, string apiKey, int limitForNumberIssues)
         {
+            // UseTestManager = true;
             if (UseTestManager)
             {
                 manager = new LocalListsExternalDataSourceTest();

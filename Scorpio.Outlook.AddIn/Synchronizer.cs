@@ -33,7 +33,6 @@ namespace Scorpio.Outlook.AddIn
 {
     using System;
     using System.Collections.Generic;
-    using System.Collections.Specialized;
     using System.Diagnostics;
     using System.Linq;
     using System.Text.RegularExpressions;
@@ -42,23 +41,26 @@ namespace Scorpio.Outlook.AddIn
     using System.Windows.Forms;
     using System.Windows.Interop;
 
+    using DevExpress.Mvvm.Native;
+
     using log4net;
 
     using Microsoft.Office.Interop.Outlook;
-    
-    
+
     using Scorpio.Outlook.AddIn.Cache;
     using Scorpio.Outlook.AddIn.Extensions;
     using Scorpio.Outlook.AddIn.Helper;
     using Scorpio.Outlook.AddIn.LocalObjects;
     using Scorpio.Outlook.AddIn.Misc;
     using Scorpio.Outlook.AddIn.Properties;
+    using Scorpio.Outlook.AddIn.Synchronization;
     using Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource;
     using Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource.Exceptions;
+    using Scorpio.Outlook.AddIn.Synchronization.Helper;
     using Scorpio.Outlook.AddIn.UserInterface.Controls;
 
     using Exception = System.Exception;
-    
+
     /// <summary>
     /// Class that is responsible for keeping time entries in sync with the calendar in outlook.
     /// </summary>
@@ -70,7 +72,7 @@ namespace Scorpio.Outlook.AddIn
         /// The logger.
         /// </summary>
         private static readonly ILog Log = log4net.LogManager.GetLogger(typeof(Synchronizer));
-        
+
         /// <summary>
         ///  A description of the regular expression:
         ///  <para>
@@ -92,21 +94,11 @@ namespace Scorpio.Outlook.AddIn
         /// List of all AppointmentItems in the outlook calendar. Elements in this set have a deletionlistener and a changelistener attached.
         /// </summary>
         private readonly HashSet<AppointmentItem> _managedItems = new HashSet<AppointmentItem>();
-        
+
         /// <summary>
         /// A dictionary of all time entries that the user can read in the external source. Mapping from time entry id to time entry.
         /// </summary>
         private IDictionary<int, ActivityInfo> _activities = new Dictionary<int, ActivityInfo>();
-
-        /// <summary>
-        /// A dictionary of all issues that the user can read in the external source. Mapping from issue id to issue.
-        /// </summary>
-        private IDictionary<int, IssueInfo> _issues = new Dictionary<int, IssueInfo>();
-
-        /// <summary>
-        /// A dictionary of all projects that the user can read in the external source. Mapping from project id to project.
-        /// </summary>
-        private IDictionary<int, ProjectInfo> _projects = new Dictionary<int, ProjectInfo>();
 
         /// <summary>
         /// The manager for the external data source
@@ -114,14 +106,19 @@ namespace Scorpio.Outlook.AddIn
         private IExternalSource _externalDataSource;
 
         /// <summary>
+        /// A dictionary of all issues that the user can read in the external source. Mapping from issue id to issue.
+        /// </summary>
+        private IDictionary<int, IssueInfo> _issues = new Dictionary<int, IssueInfo>();
+
+        /// <summary>
         /// The number of last used issues to display
         /// </summary>
         private int _numberLastUsedIssues;
 
         /// <summary>
-        /// The next free id
+        /// A dictionary of all projects that the user can read in the external source. Mapping from project id to project.
         /// </summary>
-        private int _nextFreeId;
+        private IDictionary<int, ProjectInfo> _projects = new Dictionary<int, ProjectInfo>();
 
         #endregion
 
@@ -137,7 +134,6 @@ namespace Scorpio.Outlook.AddIn
             Globals.ThisAddIn.SyncState.Status = "Nicht verbunden";
             this.LastUsedIssues = new List<IssueInfo>();
             this.FavoriteIssues = new List<IssueInfo>();
-            this.AllIssues = new Dictionary<int, IssueInfo>();
 
             // At startup, register all appointments in the calendar for change tracking.
             foreach (var item in this.Calendar.Items)
@@ -166,100 +162,7 @@ namespace Scorpio.Outlook.AddIn
 
         #endregion
 
-        #region Public properties
-
-        /// <summary>
-        /// Gets the user which is currently logged into redmine.
-        /// </summary>
-        public UserInfo CurrentUser { get; private set; }
-
-        /// <summary>
-        /// Gets the reference to the redmine calendar
-        /// </summary>
-        public MAPIFolder Calendar { get; private set; }
-
-        /// <summary>
-        /// Gets the items collection of the redmine calendar. This reference has to be preserved 
-        /// in order to keep the ItemAdd listener on the item collection.
-        /// </summary>
-        public Items CalendarItems { get; private set; }
-
-        /// <summary>
-        /// Gets a value indicating whether there is a connection to the redmine system
-        /// </summary>
-        public bool IsConnected
-        {
-            get
-            {
-                return this._externalDataSource != null && this.CurrentUser != null;
-            }
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether or not a synchronization of projects and issues is in progress.
-        /// </summary>
-        public bool IsConnecting { get; private set; }
-
-        /// <summary>
-        /// Gets a value indicating whether a forced sync with save is possible at the moment
-        /// </summary>
-        public bool CanSyncTimeEntries { get; private set; }
-
-        /// <summary>
-        /// Gets a list of all issues
-        /// </summary>
-        public IDictionary<int, IssueInfo> AllIssues { get; private set; }
-
-        /// <summary>
-        /// Gets a list of previously used issues
-        /// </summary>
-        public List<IssueInfo> LastUsedIssues { get; private set; }
-
-        /// <summary>
-        /// Gets a list of issues that were marked as favorite issues.
-        /// </summary>
-        public List<IssueInfo> FavoriteIssues { get; private set; }
-        
-        /// <summary>
-        /// Gets the URL to the external system
-        /// </summary>
-        public string ConnectionUrl
-        {
-            get
-            {
-                return Settings.Default.RedmineURL.Last() == '/'
-                           ? Settings.Default.RedmineURL.Substring(0, Settings.Default.RedmineURL.Length - 1)
-                           : Settings.Default.RedmineURL;
-            }
-        }
-
-        /// <summary>
-        /// Gets the current user name.
-        /// </summary>
-        public string CurrentUserName
-        {
-            get
-            {
-                return this.CurrentUser != null ? this.CurrentUser.Name : string.Empty;
-            }
-        }
-
-        #endregion
-
         #region Public Methods and Operators
-
-        /// <summary>
-        /// Saves the favorite issues to the settings.
-        /// </summary>
-        /// <param name="issues">The issue information of the issues which shall become the new favorite issues.</param>
-        public void UpdateFavoriteIssues(List<IssueInfo> issues)
-        {
-            this.FavoriteIssues = issues;
-
-            Settings.Default.FavoriteIssues = string.Join(";", this.FavoriteIssues.Select(iref => iref.Id));
-            Settings.Default.Save();
-        }
-
 
         /// <summary>
         /// Build the issue information string (link + name)
@@ -296,6 +199,17 @@ namespace Scorpio.Outlook.AddIn
         }
 
         /// <summary>
+        /// Method to get all issues assigned to me
+        /// </summary>
+        /// <returns>the list of all issues assigned to me</returns>
+        public List<IssueInfo> GetAllIssuesAssignedToMe()
+        {
+            var parameters = new DataSourceParameter() { AssignedToUserId = -1, };
+            var issuesForMe = this._externalDataSource.GetIssueInfoList(parameters);
+            return issuesForMe.ToList();
+        }
+
+        /// <summary>
         /// Initializes the redmine state.
         /// </summary>
         public void InitializeRedmineNew()
@@ -304,6 +218,76 @@ namespace Scorpio.Outlook.AddIn
 
             t.SetApartmentState(ApartmentState.STA);
             t.Start();
+        }
+
+        /// <summary>
+        /// Method to try to reload an issue by its id
+        /// </summary>
+        /// <param name="issueId">the issue id</param>
+        /// <returns>the corresponding issue info and the list of new issues</returns>
+        public Tuple<IssueInfo, List<IssueInfo>> ReloadIssueById(int issueId)
+        {
+            IssueInfo issueInfo = null;
+            var newIssueList = new List<IssueInfo>();
+
+            if (!this.AllIssues.TryGetValue(issueId, out issueInfo))
+            {
+                // we do not know the issue yet, try to reload it
+                try
+                {
+                    // try to reload the ticket by its ticket number
+                    var parameter = new DataSourceParameter() { IssueId = issueId };
+                    var issues = this._externalDataSource.GetIssueInfoList(parameter);
+                    issueInfo = issues.FirstOrDefault();
+
+                    // it ticket was found, add it to list of all issues and update the known issues
+                    if (issueInfo != null)
+                    {
+                        this.AllIssues.Add(issueId, issueInfo);
+                        var issueList = this.AllIssues.Values.Distinct().ToList();
+                        LocalCache.WriteObject(LocalCache.KnownIssues, issueList);
+                        newIssueList.Add(issueInfo);
+                    }
+                    else
+                    {
+                        // if the ticket could not be found by its ticket number, it probably has status done and cannot be found via the api
+                        // hence the usual ticket reloading is triggered, which updates all tickets from redmine
+
+                        // start reloading of issues
+                        var reloadedIssues = DownloadHelper.ReloadIssueInfoExtended(issueId, this._externalDataSource, this.AllIssues.Values.ToList());
+
+                        // get all new issues and add them to the issue list
+                        var newIssues = reloadedIssues.Keys.Except(this.AllIssues.Keys).ToList();
+                        reloadedIssues.Where(i => newIssues.Contains(i.Key)).ForEach(i => this.AllIssues.Add(i.Key, i.Value));
+                        
+                        // update the known issue list
+                        var issueList = this.AllIssues.Values.Distinct().ToList();
+                        LocalCache.WriteObject(LocalCache.KnownIssues, issueList);
+
+                        // look for the missing ticket
+                        issueInfo = reloadedIssues.Values.FirstOrDefault(i => object.Equals(i.Id, issueId));
+                        var infoText = string.Format(
+                            "No result for loading ticket #{0}, reloading all tickets ({1} new tickets found).",
+                            issueId,
+                            newIssues.Count());
+                        Log.Info(infoText);
+                        newIssueList.AddRange(reloadedIssues.Values.Where(i => newIssues.Contains(i.Id.GetValueOrDefault(-1))));
+                    }
+
+                    // if still no ticket can be found, log a warning 
+                    if (issueInfo == null)
+                    {
+                        Log.Warn(string.Format("No result for loading ticket #{0}, {1} results.", issueId, issues.Count));
+                    }
+                }
+                catch (Exception exception)
+                {
+                    var text = string.Format("Error while reloading issue with id {0}", issueId);
+                    Log.Error(text, exception);
+                }
+            }
+
+            return Tuple.Create(issueInfo, newIssueList);
         }
 
         /// <summary>
@@ -375,7 +359,7 @@ namespace Scorpio.Outlook.AddIn
                 var dialog = new SaveDialog(modifiedAppointments);
                 var wih = new WindowInteropHelper(dialog) { Owner = wnd.Handle };
                 dialog.ShowDialog();
-                
+
                 if (!dialog.DialogResult.GetValueOrDefault(false))
                 {
                     // The user canceled, do nothing.
@@ -400,7 +384,7 @@ namespace Scorpio.Outlook.AddIn
         /// <param name="issueId">The new issue id</param>
         public void UpdateAppointmentIssue(AppointmentItem appointment, int issueId)
         {
-            var originalId = appointment.GetAppointmentCustomId(Constants.FieldRedmineIssueId);
+            var originalId = appointment.GetIssueId();
 
             // if the the id did not change, or the new issue number is not know, skip further processing.
             if (originalId == issueId || !this._issues.ContainsKey(issueId))
@@ -410,8 +394,8 @@ namespace Scorpio.Outlook.AddIn
 
             // set issue to appointment
             var issue = this._issues[issueId];
-            appointment.SetAppointmentCustomId(Constants.FieldRedmineProjectId, issue.ProjectId);
-            appointment.SetAppointmentCustomId(Constants.FieldRedmineIssueId, issueId);
+            appointment.SetProjectId(issue.ProjectId);
+            appointment.SetIssueId(issueId);
             appointment.CreateAppointmentLocation(issueId, issue);
             appointment.SetAppointmentState(AppointmentState.Modified);
             appointment.Save();
@@ -427,6 +411,18 @@ namespace Scorpio.Outlook.AddIn
             Settings.Default.LastUsedIssues = string.Join(";", this.LastUsedIssues.Select(iref => iref.Id));
             Settings.Default.Save();
             this.RaiseAppointmentChanged();
+        }
+
+        /// <summary>
+        /// Saves the favorite issues to the settings.
+        /// </summary>
+        /// <param name="issues">The issue information of the issues which shall become the new favorite issues.</param>
+        public void UpdateFavoriteIssues(List<IssueInfo> issues)
+        {
+            this.FavoriteIssues = issues;
+
+            Settings.Default.FavoriteIssues = string.Join(";", this.FavoriteIssues.Select(iref => iref.Id));
+            Settings.Default.Save();
         }
 
         #endregion
@@ -446,7 +442,7 @@ namespace Scorpio.Outlook.AddIn
 
             if (dialog.DialogResult.HasValue && dialog.DialogResult.Value)
             {
-                var issue = this._issues[dialog.SelectedIssue.Id];
+                var issue = this._issues[dialog.SelectedIssue.Id.Value];
                 var project = this._projects[dialog.SelectedIssue.ProjectId];
                 var activity = this.GetDefaultActivity();
 
@@ -461,15 +457,15 @@ namespace Scorpio.Outlook.AddIn
                         {
                             // create & save the appointment
                             var newEntry = (AppointmentItem)this.Calendar.Items.Add(OlItemType.olAppointmentItem);
-                            newEntry.SetAppointmentCustomId(Constants.FieldImportedFromRedmine, 0);
+                            newEntry.SetIsImported(false);
                             newEntry.ReminderSet = false;
 
-                            newEntry.CreateAppointmentLocation(issue.Id, issue);
+                            newEntry.CreateAppointmentLocation(issue.Id.Value, issue);
                             newEntry.Subject = dialog.Description;
                             newEntry.Start = currentDate.Date.AddHours(dialog.StartTime.Hour).AddMinutes(dialog.StartTime.Minute);
                             newEntry.End = currentDate.Date.AddHours(dialog.EndTime.Hour).AddMinutes(dialog.EndTime.Minute);
 
-                            newEntry.UpdateAppointmentFields(null, project.Id, issue.Id, activity.Id, DateTime.Now);
+                            newEntry.UpdateAppointmentFields(null, project.Id.Value, issue.Id.Value, activity.Id.Value, DateTime.Now);
                             newEntry.SetAppointmentState(AppointmentState.Modified);
 
                             newEntry.Save();
@@ -488,6 +484,7 @@ namespace Scorpio.Outlook.AddIn
             }
         }
 
+        
         /// <summary>
         /// Creates a time entry for an appointment in redmine
         /// </summary>
@@ -500,10 +497,11 @@ namespace Scorpio.Outlook.AddIn
             var entry = this.CreateTimeEntryFromAppointment(item, updateTime);
             if (entry != null)
             {
+                entry.Id = 0;
                 var resultEntry = this._externalDataSource.CreateObject(entry);
 
                 // update the appointment properties
-                item.SetAppointmentCustomId(Constants.FieldRedmineTimeEntryId, resultEntry.Id);
+                item.SetTimeEntryId(resultEntry.Id);
                 if (resultEntry.IssueInfo.Id != Settings.Default.RedmineUseOvertimeIssue)
                 {
                     item.SetAppointmentState(AppointmentState.Synchronized);
@@ -514,10 +512,7 @@ namespace Scorpio.Outlook.AddIn
                 }
                 item.SetAppointmentModificationDate(resultEntry.UpdateTime);
                 item.Save();
-            }
-            else
-            {
-                Log.Warn(string.Format("No time entry created for appointment item {0}", item.GetStringRepresentation()));
+                this.UpdateCache(resultEntry);
             }
         }
 
@@ -535,13 +530,73 @@ namespace Scorpio.Outlook.AddIn
         /// </returns>
         private TimeEntryInfo CreateTimeEntryFromAppointment(AppointmentItem item, DateTime updateTime)
         {
-            // get the id of the entry if exists
-            var entryId = item.GetAppointmentCustomId(Constants.FieldRedmineTimeEntryId);
-            
+            var entryId = item.GetTimeEntryId();
+            var projectId = item.GetProjectId();
+            var issueId = item.GetIssueId();
+            var activityId = item.GetActivityId();
+
             // mandatory fields have to be set
-            var activityInfo = this.GetActivityInfo(item);
-            var issueInfo = this.GetIssueInfo(item);
-            var projectInfo = this.GetProjectInfo(item, issueInfo);
+            if (activityId == null)
+            {
+                // get default activity
+                var defaultAct = this.GetDefaultActivity();
+
+                // update appointment
+                item.SetActivityId(defaultAct.Id);
+                item.Save();
+
+                activityId = defaultAct.Id;
+            }
+
+            // check if there is an issue
+            if (issueId == null)
+            {
+                // try to identify issue based on appointment subject
+                var issueGuess = this.TryGuessIssue(item);
+                if (issueGuess != null)
+                {
+                    item.SetIssueId(issueGuess.Id);
+                    item.Save();
+
+                    issueId = issueGuess.Id;
+                }
+                else
+                {
+                    item.AppendToBody("Das Issue für diesen Eintrag konnte nicht ermittelt werden.");
+                    item.SetAppointmentState(AppointmentState.SyncError);
+                    item.Save();
+                    return null;
+                }
+            }
+            else
+            {
+                // check if the saved issue id is ok
+                if (!this._issues.ContainsKey(issueId.Value))
+                {
+                    item.AppendToBody("Das Issue für diesen Eintrag konnte nicht ermittelt werden.");
+                    item.SetAppointmentState(AppointmentState.SyncError);
+                    item.Save();
+                    return null;
+                }
+            }
+
+            // we have a issue number but no project number
+            if (projectId == null)
+            {
+                var issue = this._issues[issueId.Value];
+                item.SetProjectId(issue.ProjectId);
+                item.Save();
+                projectId = issue.ProjectId;
+            }
+
+            // get the corresponding info objects
+            ActivityInfo activityInfo = null;
+            IssueInfo issueInfo = null;
+            ProjectInfo projectInfo = null;
+
+            this._activities.TryGetValue(activityId.Value, out activityInfo);
+            this._issues.TryGetValue(issueId.Value, out issueInfo);
+            this._projects.TryGetValue(projectId.Value, out projectInfo);
 
             TimeEntryInfo timeEntryInfoToCreate = null;
             if (activityInfo != null && issueInfo != null && projectInfo != null)
@@ -549,7 +604,7 @@ namespace Scorpio.Outlook.AddIn
                 // create the time entry info if possible
                 timeEntryInfoToCreate = new TimeEntryInfo()
                                             {
-                                                Id = entryId ?? -this._nextFreeId++,
+                                                Id = entryId,
                                                 StartDateTime = item.Start,
                                                 EndDateTime = item.End,
                                                 Name = item.Subject,
@@ -559,130 +614,15 @@ namespace Scorpio.Outlook.AddIn
                                                 ProjectInfo = projectInfo,
                                             };
             }
+            else
+            {
+                item.AppendToBody("Das Issue, das Projekt oder die Aktivität für diesen Eintrag konnten nicht ermittelt werden.");
+                item.SetAppointmentState(AppointmentState.SyncError);
+                item.Save();
+                return null;
+            }
 
             return timeEntryInfoToCreate;
-        }
-
-        /// <summary>
-        /// Method to get the issue info of an appointment
-        /// </summary>
-        /// <param name="item">the appointment item</param>
-        /// <returns>the issue info if exists, else null</returns>
-        private IssueInfo GetIssueInfo(AppointmentItem item)
-        {
-            // check if there is an issue
-            var issueId = item.GetAppointmentCustomId(Constants.FieldRedmineIssueId);
-            if (issueId == null)
-            {
-                Log.Info(
-                    string.Format(
-                        "Issue für den Eintrag nicht gesetzt, ermittle Issue aus Kontextinformationen von '{0}'",
-                        item.GetStringRepresentation()));
-                // try to identify issue based on appointment subject
-                var issueGuess = this.TryGuessIssue(item);
-                if (issueGuess != null)
-                {
-                    item.SetAppointmentCustomId(Constants.FieldRedmineIssueId, issueGuess.Id);
-                    item.Save();
-
-                    issueId = issueGuess.Id;
-                    Log.Info(
-                        string.Format(
-                            "Issue für den Eintrag '{0}' wurde aus Kontextinfos als '{1}' ermittelt.",
-                            item.GetStringRepresentation(),
-                            issueGuess));
-                }
-                else
-                {
-                    item.AppendToBody("Das Issue für diesen Eintrag konnte nicht ermittelt werden.");
-                    Log.Error(string.Format("Ermitteln des Issues aus Kontext nicht möglich: '{0}'", item.GetStringRepresentation()));
-                    item.SetAppointmentState(AppointmentState.SyncError);
-                    item.Save();
-                    return null;
-                }
-            }
-
-
-            // at this point we known, that the issue id has a value
-            IssueInfo issueInfo = null;
-            var success = this._issues.TryGetValue(issueId.Value, out issueInfo);
-            // check if the saved issue id is ok
-            if (!success)
-            {
-                Log.Info(string.Format("Issue {0} konnte nicht gefunden werden, nachladen wird versucht.", issueId));
-                issueInfo = this.ReloadIssueById(issueId.Value);
-                if (issueInfo == null)
-                {
-                    // in this case the issue could not be found in the list
-                    item.AppendToBody("Das Issue für diesen Eintrag konnte nicht ermittelt werden.");
-                    item.SetAppointmentState(AppointmentState.SyncError);
-                    item.Save();
-                    Log.Error(string.Format("Issue {0} konnte nicht gefunden und nicht nachgeladen werden.", issueId));
-                }
-            }
-
-            return issueInfo;
-        }
-
-        /// <summary>
-        /// Try to get the project information from an appointment
-        /// </summary>
-        /// <param name="item">the appointment</param>
-        /// <param name="issueInfo">the issue info, may be null</param>
-        /// <returns>the project info if found, null else</returns>
-        private ProjectInfo GetProjectInfo(AppointmentItem item, IssueInfo issueInfo)
-        {
-            var projectId = item.GetAppointmentCustomId(Constants.FieldRedmineProjectId);
-
-            // we have a issue number but no project number
-            if (projectId == null && issueInfo != null)
-            {
-                item.SetAppointmentCustomId(Constants.FieldRedmineProjectId, issueInfo.ProjectId);
-                item.Save();
-                projectId = issueInfo.ProjectId;
-            }
-
-            // get the corresponding info objects
-            ProjectInfo projectInfo = null;
-            if (projectId.HasValue)
-            {
-                this._projects.TryGetValue(projectId.Value, out projectInfo);
-            }
-
-            // log the case that we could not find a project with the given id
-            if (projectInfo == null)
-            {
-                Log.Error(string.Format("Ein Projekt mit ID {0} konnte nicht gefunden werden.", projectId));
-            }
-            return projectInfo;
-        }
-
-        /// <summary>
-        /// Gets the activity info for the given appointment
-        /// </summary>
-        /// <param name="item">the appointment item</param>
-        /// <returns>the corresponding activity info or null, if not exists</returns>
-        private ActivityInfo GetActivityInfo(AppointmentItem item)
-        {
-            var activityId = item.GetAppointmentCustomId(Constants.FieldRedmineActivityId);
-            if (activityId == null)
-            {
-                // get default activity
-                var defaultAct = this.GetDefaultActivity();
-
-                // update appointment
-                item.SetAppointmentCustomId(Constants.FieldRedmineActivityId, defaultAct.Id);
-                item.Save();
-
-                activityId = defaultAct.Id;
-            }
-
-            ActivityInfo activityInfo = null;
-            if (!this._activities.TryGetValue(activityId.Value, out activityInfo))
-            {
-                Log.Error(string.Format("Keine Aktivität mit der ID {0} gefunden.", activityId));
-            }
-            return activityInfo;
         }
 
         /// <summary>
@@ -692,7 +632,7 @@ namespace Scorpio.Outlook.AddIn
         /// <returns>if deletion was successful</returns>
         private bool DeleteTimeEntryInfo(AppointmentItem item)
         {
-            var timeEntryId = item.GetAppointmentCustomId(Constants.FieldRedmineTimeEntryId);
+            var timeEntryId = item.GetTimeEntryId();
             if (!timeEntryId.HasValue)
             {
                 // if the item has no time entry id, it is not in redmine, thus consider the deletion successful.
@@ -712,130 +652,8 @@ namespace Scorpio.Outlook.AddIn
             }
         }
 
-        /// <summary>
-        /// Download the available activities
-        /// </summary>
-        private void DownloadActivities()
-        {
-            var parameters = new DataSourceParameter() { UseLimit = true};
-            this._activities = this._externalDataSource.GetTotalActivityInfoList(parameters).ToDictionary(act => act.Id, act => act);
-        }
-
-        /// <summary>
-        /// Downloads all issues for a specified set of projects.
-        /// </summary>
-        /// <param name="newProjects">The projects that were not previously known to scorpio, which have to have all their issues downloaded</param>
-        /// <returns>A dictionary that contains all issues for the provided projects, identified by their issue id.</returns>
-        private Dictionary<int, IssueInfo> DownloadAllIssuesForNewProjects(List<ProjectInfo> newProjects)
-        {
-            var allIssuesForNewProjects = new HashSet<IssueInfo>();
-            
-            foreach (var project in newProjects)
-            {
-                // get parameter and action
-                var parameters = new DataSourceParameter() { ProjectId = project.Id, StatusId = -1 };
-                Action<int, int> action =
-                    (i, overall) =>
-                        Globals.ThisAddIn.SyncState.Status =
-                            string.Format("Lade Issues für neues Projekt {0} ({1}/{2})", project.Name, Math.Min(i, overall), overall);
-                try
-                {
-                    // load data and add the issues. Note that we load all issues here
-                    var newIssuesOfProject = this._externalDataSource.GetTotalIssueInfoList(parameters, action);
-                    newIssuesOfProject.ToList().ForEach(i => allIssuesForNewProjects.Add(i));
-                }
-                catch (Exception exception)
-                {
-                    Log.Error(string.Format("Error while loading project {0}", project.Name), exception);
-                }
-            }
-
-            // convert the hash set to a dictionary
-            return allIssuesForNewProjects.Distinct().ToDictionary(k => k.Id, v => v);
-        }
-
-        /// <summary>
-        /// Downloads all redmine issues
-        /// </summary>
-        /// <param name="newProjects">The projects that are new in this run of downloading issues. 
-        /// They will have all Issues loaded, independent of the last change time of the issue.</param>
-        private void DownloadIssues(List<ProjectInfo> newProjects)
-        {
-            // get the issue cache
-            var lastSync = Settings.Default.LastIssueSyncDate;
-            var knownIssueList = LocalCache.ReadObject(LocalCache.KnownIssues) as List<IssueInfo> ?? new List<IssueInfo>();
-
-            // get new issues since that date minus one
-            var parameters = new DataSourceParameter() { UseLimit = true, StatusId = -1 };
-            if (knownIssueList.Any())
-            {
-                parameters.UpdateStartDateTime = lastSync.Date.AddDays(-2);
-            }
-
-            // parameters.Add("status_id", "open");
-            var newIssues = new Dictionary<int, IssueInfo>();
-            try
-            {
-                Globals.ThisAddIn.SyncState.Status = "Lade Issues";
-                newIssues = this._externalDataSource.GetIssueInfoList(parameters).Distinct().ToDictionary(i => i.Id, i => i);
-            }
-            catch (Exception e)
-            {
-                Log.Error("Error in new issues", e);
-            }
-
-            // initialize the list of all issues
-            var allIssues = new List<IssueInfo>(newIssues.Values);
-            // add known issues
-            knownIssueList.ForEach(i => allIssues.Add(i));
-            
-            // Add Issues from new Projects to the list too, without condition of their last change date (#14644)
-            var allIssuesOfNewProjects = this.DownloadAllIssuesForNewProjects(newProjects);
-            allIssuesOfNewProjects.Values.Distinct().ToList().ForEach(i => allIssues.Add(i));
-
-            // store the values in the local cache
-            try
-            {
-                this._issues = allIssues.Distinct().ToDictionary(i => i.Id, v => v);
-            }
-            catch (Exception e)
-            {
-                Log.Error("Error in all issues", e);
-            }
-            var issueList = this._issues.Select(i => i.Value).ToList();
-            var success = LocalCache.WriteObject(LocalCache.KnownIssues, issueList);
-            if (success)
-            {
-                Settings.Default.LastIssueSyncDate = DateTime.Now.Date;
-                Settings.Default.Save();
-            }
-        }
-
-        /// <summary>
-        /// Downloads all redmine projects
-        /// </summary>
-        /// <returns>The projects that are downloaded from redmine.</returns>
-        private List<ProjectInfo> DownloadProjects()
-        {
-            var parameters = new DataSourceParameter();
-
-            this._projects =
-                this._externalDataSource.GetTotalProjectList(
-                        parameters,
-                        (cur, total) => Globals.ThisAddIn.SyncState.Status = string.Format("Lade Projekte ({0}/{1})", Math.Min(cur, total), total))
-                    .ToDictionary(p => p.Id, p => p);
-
-            // Get the known projects from localcache
-            var knownProjects = LocalCache.ReadObject(LocalCache.KnownProjects) as List<ProjectInfo> ?? new List<ProjectInfo>();
-
-            // Find those projects which are new 
-            var newProjects = this._projects.Values.Except(knownProjects).ToList();
-
-            // Write all currently known projects
-            LocalCache.WriteObject(LocalCache.KnownProjects, this._projects.Values.ToList());
-
-            return newProjects;
-        }
+        
+        
 
         /// <summary>
         /// Gets the default activity for time entries.
@@ -891,29 +709,22 @@ namespace Scorpio.Outlook.AddIn
                 this.CurrentUser = this._externalDataSource.GetCurrentUser();
 
                 // get activity infos
-                this.DownloadActivities();
+                this._activities = DownloadHelper.GetActivityInfos(this._externalDataSource);
 
                 // load projects
-                Globals.ThisAddIn.SyncState.Status = "Lade Projekte...";
-                var newProjects = this.DownloadProjects();
+                var projectLists = DownloadHelper.GetCurrentProjectsAndUpdateCache(this._externalDataSource);
+                var newProjects = projectLists.NewProjects;
+                this._projects = projectLists.AllProjects;
 
                 // load issues
-                Globals.ThisAddIn.SyncState.Status = "Lade Issues...";
-                this.DownloadIssues(newProjects);
+                this._issues = DownloadHelper.DownloadIssues(newProjects, this._issues, this._externalDataSource);
+                
+                // update the special issue infos
+                this.UpdateSpecialIssueInformation();
 
-                // create displayable issue list
-                this.AllIssues = this._issues.ToDictionary(i => i.Key, i => i.Value);
-
-                // update favorite and last used issues
-                this.SetSpecialIssues(Settings.Default.LastUsedIssues, this.LastUsedIssues);
-                this.SetSpecialIssues(Settings.Default.FavoriteIssues, this.FavoriteIssues);
-
-                // update the last used issues
-                this.UpdateLastUsedIssues();
-
+                // update the settings and display correct state
                 Globals.ThisAddIn.SyncState.Status = "Verbunden";
                 this.CanSyncTimeEntries = true;
-
                 this.IsConnecting = false;
                 Globals.ThisAddIn.SyncState.RaiseConnectionChanged();
                 this.RaiseAppointmentChanged();
@@ -932,62 +743,17 @@ namespace Scorpio.Outlook.AddIn
         }
 
         /// <summary>
-        /// Method to update the list of the issues last used
+        /// Method called to update the special issue infos
         /// </summary>
-        private void UpdateLastUsedIssues()
+        private void UpdateSpecialIssueInformation()
         {
-            // set number of last used issues to use
-            this._numberLastUsedIssues = Math.Max(0, Settings.Default.NumberLastUsedIssues);
+            // update favorite and last used issues
+            this.SetSpecialIssues(Settings.Default.LastUsedIssues, this.LastUsedIssues);
+            this.SetSpecialIssues(Settings.Default.FavoriteIssues, this.FavoriteIssues);
 
-            if (this.LastUsedIssues.Count > this._numberLastUsedIssues)
-            {
-                var elementsToRemain = new HashSet<IssueInfo>(this.LastUsedIssues.Take(this._numberLastUsedIssues));
-                this.LastUsedIssues.RemoveAll(i => !elementsToRemain.Contains(i));
-            }
-
-            var lastUsedIssues = Settings.Default.LastUsedIssues;
-            var split = lastUsedIssues.Split(';');
-            if (split.Length > this._numberLastUsedIssues)
-            {
-                var lastUsedToTake = split.Take(this._numberLastUsedIssues);
-                var lengthOfNew = lastUsedToTake.Sum(e => e.Length) + this._numberLastUsedIssues - 1;
-                var newLastUsed = lastUsedIssues.Substring(0, lengthOfNew);
-                Settings.Default.LastUsedIssues = newLastUsed;
-                Settings.Default.Save();
-            }
+            // update the last used issues
+            this.UpdateLastUsedIssues();
         }
-
-        /// <summary>
-        /// Method to set special issues
-        /// </summary>
-        /// <param name="specialIssueIds">the ids of the special issues, concated using ";"</param>
-        /// <param name="issueList">the issue list to store the issues in</param>
-        private void SetSpecialIssues(string specialIssueIds, List<IssueInfo> issueList)
-        {
-            // create last used issues
-            if (!string.IsNullOrWhiteSpace(specialIssueIds))
-            {
-                issueList.Clear();
-                foreach (var item in specialIssueIds.Split(';'))
-                {
-                    try
-                    {
-                        var issueId = Convert.ToInt32(item);
-                        IssueInfo issueInfo;
-                        if (this.AllIssues.TryGetValue(issueId, out issueInfo))
-                        {
-                            issueList.Add(issueInfo);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        var msg = string.Format("Could not add issue with id {0} to list of special issues.", item);
-                        Log.Error(msg, ex);
-                    }
-                }
-            }
-        }
-        
 
         /// <summary>
         /// Is invoked before an appointment item is deleted
@@ -998,7 +764,7 @@ namespace Scorpio.Outlook.AddIn
         {
             var appItem = (AppointmentItem)item;
 
-            var redmineId = appItem.GetAppointmentCustomId(Constants.FieldRedmineTimeEntryId);
+            var redmineId = appItem.GetTimeEntryId();
             if (redmineId != null && redmineId.Value > 0)
             {
                 // If the appointment has a corresponding time entry in redmine, do not delete it immediately.
@@ -1018,8 +784,9 @@ namespace Scorpio.Outlook.AddIn
             // get change reason
             var subjectChanged = name == "Subject";
             var timesChanged = name == "Start" || name == "End";
+            var hasIssueInfo = item.GetIssueId().HasValue || this.TryGuessIssue(item) != null;
 
-            if (subjectChanged || timesChanged)
+            if ((subjectChanged || timesChanged) && hasIssueInfo)
             {
                 if (!item.IsModifiedSet())
                 {
@@ -1027,6 +794,7 @@ namespace Scorpio.Outlook.AddIn
                     item.SetAppointmentState(AppointmentState.Modified);
                     item.Save();
                 }
+
                 // the raise appointment update method is called here to update the ui
                 if (timesChanged)
                 {
@@ -1055,20 +823,18 @@ namespace Scorpio.Outlook.AddIn
              * when the appointment is saved. Therefore, set the Appointmentstate to modified, when the appointment that is 
              * added already has the Field Constants.FieldRedmineIssueId set (i.e. it already has an issue to which it belongs).
              * However, this would also set appointments as changed that were imported from redmine. Therefore the redmine 
-             * synchronizer sets another custom field: Constants.FieldImportedFromRedmine. This indicates that we must not 
-             * change the state to modified here.
+             * synchronizer sets another custom property: IsImported. This indicates that we must not change the state to modified here.
              */
-            var importedFromRedmine = appItem.GetAppointmentCustomId(Constants.FieldImportedFromRedmine);
-            if (appItem.GetAppointmentCustomId(Constants.FieldRedmineIssueId).HasValue
-                && !(importedFromRedmine.HasValue && importedFromRedmine.Value == 1))
+            var isImported = appItem.IsImported();
+            if ((appItem.GetIssueId().HasValue && !isImported)
+                || (!appItem.GetIssueId().HasValue && this.TryGuessIssue(appItem) != null))
             {
                 appItem.SetAppointmentState(AppointmentState.Modified);
             }
             else
             {
-                appItem.SetAppointmentCustomId(Constants.FieldImportedFromRedmine, null);
+                appItem.ClearIsImported();
             }
-
             appItem.Save();
             this.RegisterAppointment(appItem);
         }
@@ -1083,7 +849,7 @@ namespace Scorpio.Outlook.AddIn
                 this.AppointmentChanged(this, new EventArgs());
             }
         }
-        
+
         /// <summary>
         /// Registers an appointment for change tracking
         /// </summary>
@@ -1140,11 +906,11 @@ namespace Scorpio.Outlook.AddIn
                 foreach (var appointment in itemsForDateRange)
                 {
                     // already synced item?
-                    var redmineId = appointment.GetAppointmentCustomId(Constants.FieldRedmineTimeEntryId);
+                    var redmineId = appointment.GetTimeEntryId();
                     if (redmineId == null || appointment.IsAppointmentCopied())
                     {
                         // delete items that does not exist in redmine
-                        appointment.SetAppointmentCustomId(Constants.FieldRedmineTimeEntryId, null);
+                        appointment.SetTimeEntryId(null);
                         appointment.Save();
                         appointment.Delete();
                     }
@@ -1180,7 +946,7 @@ namespace Scorpio.Outlook.AddIn
                             // there is no corresponding redmine item although this item has a redmine id
                             // it might be deleted in redmine so it is now deleted here.
                             // first set the redmine id to null so that the delete function will not mark it again as deleted in redmine
-                            appointment.SetAppointmentCustomId(Constants.FieldRedmineTimeEntryId, null);
+                            appointment.SetTimeEntryId(null);
                             appointment.Delete();
                         }
                     }
@@ -1194,7 +960,7 @@ namespace Scorpio.Outlook.AddIn
                     // create & save the appointment
                     var timeEntry = entry.Value;
                     var newEntry = (AppointmentItem)this.Calendar.Items.Add(OlItemType.olAppointmentItem);
-                    newEntry.SetAppointmentCustomId(Constants.FieldImportedFromRedmine, 1);
+                    newEntry.SetIsImported(true);
                     newEntry.ReminderSet = false;
                     newEntry.UpdateAppointmentFromTimeEntry(timeEntry, this.GetIssueForTimeEntry(timeEntry));
                     newEntry.Save();
@@ -1230,7 +996,6 @@ namespace Scorpio.Outlook.AddIn
                 {
                     currentItem++;
                     Globals.ThisAddIn.SyncState.Status = string.Format("Speichere {0} von {1}", currentItem, totalModified);
-                    Globals.ThisAddIn.SyncState.RaiseConnectionChanged();
 
                     // If the item was conflicted, try to reset its previous state, 
                     // modified or deleted, s.t. we can do another synchronization.
@@ -1266,12 +1031,10 @@ namespace Scorpio.Outlook.AddIn
                     errors.Add(message);
                     Log.Error(message, ex);
                 }
-                finally
-                {
-                    this.RaiseAppointmentChanged();
-                }
             }
 
+            this.RaiseAppointmentChanged();
+            Globals.ThisAddIn.SyncState.RaiseConnectionChanged();
             if (errors.Any())
             {
                 MessageBox.Show(string.Join("\n", errors), "Fehler bei der Synchronisation");
@@ -1288,7 +1051,7 @@ namespace Scorpio.Outlook.AddIn
             {
                 if (item.IsModifiedSet())
                 {
-                    var timeEntryId = item.GetAppointmentCustomId(Constants.FieldRedmineTimeEntryId);
+                    var timeEntryId = item.GetTimeEntryId();
                     if (timeEntryId.HasValue && !item.IsAppointmentCopied())
                     {
                         // update an existing appointment
@@ -1308,7 +1071,7 @@ namespace Scorpio.Outlook.AddIn
 
                     if (success)
                     {
-                        item.SetAppointmentCustomId(Constants.FieldRedmineTimeEntryId, null);
+                        item.SetTimeEntryId(null);
                         item.Delete();
                     }
                 }
@@ -1327,6 +1090,37 @@ namespace Scorpio.Outlook.AddIn
         }
 
         /// <summary>
+        /// Method to set special issues
+        /// </summary>
+        /// <param name="specialIssueIds">the ids of the special issues, concated using ";"</param>
+        /// <param name="issueList">the issue list to store the issues in</param>
+        private void SetSpecialIssues(string specialIssueIds, List<IssueInfo> issueList)
+        {
+            // create last used issues
+            if (!string.IsNullOrWhiteSpace(specialIssueIds))
+            {
+                issueList.Clear();
+                foreach (var item in specialIssueIds.Split(';'))
+                {
+                    try
+                    {
+                        var issueId = Convert.ToInt32(item);
+                        IssueInfo issueInfo;
+                        if (this.AllIssues.TryGetValue(issueId, out issueInfo))
+                        {
+                            issueList.Add(issueInfo);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        var msg = string.Format("Could not add issue with id {0} to list of special issues.", item);
+                        Log.Error(msg, ex);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Tries to guess the correct issue from the appointment subject line
         /// </summary>
         /// <param name="item">The appointment item</param>
@@ -1340,8 +1134,9 @@ namespace Scorpio.Outlook.AddIn
                     var m = RxIssueNumber.Match(item.Subject);
                     var issueIdStr = m.Groups["IssueNumber"].Captures[0].Value;
                     var id = Convert.ToInt32(issueIdStr);
+
                     // we get the issue from the existing issues or try to reload it
-                    return this.ReloadIssueById(id);
+                    return this.ReloadIssueById(id).Item1;
                 }
                 catch (Exception ex)
                 {
@@ -1364,66 +1159,155 @@ namespace Scorpio.Outlook.AddIn
             var timeEntryInfo = this.CreateTimeEntryFromAppointment(item, updateTime);
             if (timeEntryInfo != null)
             {
-                try
+                // update object in external source
+                var resultEntry = this._externalDataSource.UpdateObject(timeEntryInfo);
+
+                item.SetTimeEntryId(resultEntry.Id);
+                if (resultEntry.IssueInfo.Id != Settings.Default.RedmineUseOvertimeIssue)
                 {
-                    // update object in external source
-                    var resultEntry = this._externalDataSource.UpdateObject(timeEntryInfo);
-
-                    item.SetAppointmentCustomId(Constants.FieldRedmineTimeEntryId, resultEntry.Id);
-                    if (resultEntry.IssueInfo.Id != Settings.Default.RedmineUseOvertimeIssue)
-                    {
-                        item.SetAppointmentState(AppointmentState.Synchronized);
-                    }
-                    else
-                    {
-                        item.SetAppointmentState(AppointmentState.SynchronizedOvertime);
-                    }
-
-                    item.SetAppointmentModificationDate(resultEntry.UpdateTime);
-                    item.Save();
+                    item.SetAppointmentState(AppointmentState.Synchronized);
                 }
-                catch (Exception exception)
+                else
                 {
-                    Log.Error(exception.Message);
-                    return;
+                    item.SetAppointmentState(AppointmentState.SynchronizedOvertime);
                 }
 
+                item.SetAppointmentModificationDate(resultEntry.UpdateTime);
+                item.Save();
+                this.UpdateCache(resultEntry);
+            }
+        }
+
+        /// <summary>
+        /// Updates the cached project and issue info.
+        /// </summary>
+        /// <param name="resultEntry">
+        /// The time entry info
+        /// </param>
+        private void UpdateCache(TimeEntryInfo resultEntry)
+        {
+            if (resultEntry.ProjectInfo.Id.HasValue)
+            {
+                this._projects[resultEntry.ProjectInfo.Id.Value] = resultEntry.ProjectInfo;
+            }
+            if (resultEntry.IssueInfo.Id.HasValue)
+            {
+                this._issues[resultEntry.IssueInfo.Id.Value] = resultEntry.IssueInfo;
+            }
+        }
+
+        /// <summary>
+        /// Method to update the list of the issues last used
+        /// </summary>
+        private void UpdateLastUsedIssues()
+        {
+            // set number of last used issues to use
+            this._numberLastUsedIssues = Math.Max(0, Settings.Default.NumberLastUsedIssues);
+
+            if (this.LastUsedIssues.Count > this._numberLastUsedIssues)
+            {
+                var elementsToRemain = new HashSet<IssueInfo>(this.LastUsedIssues.Take(this._numberLastUsedIssues));
+                this.LastUsedIssues.RemoveAll(i => !elementsToRemain.Contains(i));
+            }
+
+            var lastUsedIssues = Settings.Default.LastUsedIssues;
+            var split = lastUsedIssues.Split(';');
+            if (split.Length > this._numberLastUsedIssues)
+            {
+                var lastUsedToTake = split.Take(this._numberLastUsedIssues);
+                var lengthOfNew = lastUsedToTake.Sum(e => e.Length) + this._numberLastUsedIssues - 1;
+                var newLastUsed = lastUsedIssues.Substring(0, lengthOfNew);
+                Settings.Default.LastUsedIssues = newLastUsed;
+                Settings.Default.Save();
             }
         }
 
         #endregion
 
-        /// <summary>
-        /// Method to try to reload an issue by its id
-        /// </summary>
-        /// <param name="issueId">the issue id</param>
-        /// <returns>the corresponding issue info</returns>
-        public IssueInfo ReloadIssueById(int issueId)
-        {
-            IssueInfo issueInfo = null;
-            if (!this.AllIssues.TryGetValue(issueId, out issueInfo))
-            {
-                // we do not know the issue yet, try to reload it
-                try
-                {
-                    var parameter = new DataSourceParameter() { IssueId = issueId };
-                    issueInfo = this._externalDataSource.GetIssueInfoList(parameter).FirstOrDefault();
-                    if (issueInfo != null)
-                    {
-                        this.AllIssues.Add(issueId, issueInfo);
-                        var issueList = this.AllIssues.Select(i => i.Value).Distinct().ToList();
-                        this._issues.Add(issueId, issueInfo);
-                        LocalCache.WriteObject(LocalCache.KnownIssues, issueList);
-                    }
-                }
-                catch (Exception exception)
-                {
-                    var text = string.Format("Error while reloading issue with id {0}", issueId);
-                    Log.Error(text, exception);
-                }
-            }
+        #region Public properties
 
-            return issueInfo;
+        /// <summary>
+        /// Gets the user which is currently logged into redmine.
+        /// </summary>
+        public UserInfo CurrentUser { get; private set; }
+
+        /// <summary>
+        /// Gets the reference to the redmine calendar
+        /// </summary>
+        public MAPIFolder Calendar { get; private set; }
+
+        /// <summary>
+        /// Gets the items collection of the redmine calendar. This reference has to be preserved 
+        /// in order to keep the ItemAdd listener on the item collection.
+        /// </summary>
+        public Items CalendarItems { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether there is a connection to the redmine system
+        /// </summary>
+        public bool IsConnected
+        {
+            get
+            {
+                return this._externalDataSource != null && this.CurrentUser != null;
+            }
         }
+
+        /// <summary>
+        /// Gets a value indicating whether or not a synchronization of projects and issues is in progress.
+        /// </summary>
+        public bool IsConnecting { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether a forced sync with save is possible at the moment
+        /// </summary>
+        public bool CanSyncTimeEntries { get; private set; }
+
+        /// <summary>
+        /// Gets a list of all issues
+        /// </summary>
+        public IDictionary<int, IssueInfo> AllIssues
+        {
+            get
+            {
+                return this._issues;
+            }
+        }
+
+        /// <summary>
+        /// Gets a list of previously used issues
+        /// </summary>
+        public List<IssueInfo> LastUsedIssues { get; private set; }
+
+        /// <summary>
+        /// Gets a list of issues that were marked as favorite issues.
+        /// </summary>
+        public List<IssueInfo> FavoriteIssues { get; private set; }
+
+        /// <summary>
+        /// Gets the URL to the external system
+        /// </summary>
+        public string ConnectionUrl
+        {
+            get
+            {
+                return Settings.Default.RedmineURL.Last() == '/'
+                           ? Settings.Default.RedmineURL.Substring(0, Settings.Default.RedmineURL.Length - 1)
+                           : Settings.Default.RedmineURL;
+            }
+        }
+
+        /// <summary>
+        /// Gets the current user name.
+        /// </summary>
+        public string CurrentUserName
+        {
+            get
+            {
+                return this.CurrentUser != null ? this.CurrentUser.Name : string.Empty;
+            }
+        }
+
+        #endregion
     }
 }

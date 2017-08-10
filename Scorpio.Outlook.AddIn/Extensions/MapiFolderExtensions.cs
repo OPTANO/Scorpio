@@ -127,7 +127,7 @@ namespace Scorpio.Outlook.AddIn.Extensions
             var filter = "[" + Constants.FieldAppointmentState + "] = " + AppointmentState.Deleted.Value + " OR [" + Constants.FieldAppointmentState
                          + "] = " + AppointmentState.Modified.Value + " OR [" + Constants.FieldAppointmentState + "] = "
                          + AppointmentState.SyncError.Value;
-
+                
             try
             {
                 var calItems = folder.Items;

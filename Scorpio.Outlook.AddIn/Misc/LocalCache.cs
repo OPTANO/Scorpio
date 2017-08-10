@@ -32,12 +32,17 @@
 namespace Scorpio.Outlook.AddIn.Cache
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
     using System.IO.IsolatedStorage;
+    using System.Linq;
     using System.Runtime.Serialization.Formatters.Binary;
 
     using log4net;
+
+    using Scorpio.Outlook.AddIn.LocalObjects;
+    using Scorpio.Outlook.AddIn.Properties;
 
     /// <summary>
     /// Class that manages access to the isolated storage for the application.
@@ -196,8 +201,9 @@ namespace Scorpio.Outlook.AddIn.Cache
         /// Reads an entire object from the local cache by its key.
         /// </summary>
         /// <param name="key">The key for which to read the object.</param>
+        /// <param name="defaultFallbackObject">the object to use for writing in case that the reading is not successful</param>
         /// <returns>The object that was stored under the key.</returns>
-        public static object ReadObject(string key)
+        public static object ReadObject(string key, object defaultFallbackObject)
         {
             var formatter = new BinaryFormatter();
 
@@ -208,12 +214,21 @@ namespace Scorpio.Outlook.AddIn.Cache
                 {
                     using (var mem = new MemoryStream(knownIssueData))
                     {
-                        return formatter.Deserialize(mem);
+                        var obj = formatter.Deserialize(mem);
+                        return obj;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("Error while deserializing data from the local cache.", ex);
+                    Log.Info(string.Format("Error while deserializing data with key {0} from the local cache. Setting key to default.", key), ex);
+                    try
+                    {
+                        LocalCache.WriteObject(key, defaultFallbackObject);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(string.Format("Error while setting data with key {0} to default.", key), e);
+                    }
                     Debugger.Break();
                 }
             }
@@ -246,6 +261,47 @@ namespace Scorpio.Outlook.AddIn.Cache
                 return false;
             }
         }
+
+
+        /// <summary>
+        /// Method to update the known issues stored in the cache to contain the elementes stored in the local variable
+        /// </summary>
+        /// <param name="issueInfos">the issue infos to store in the cache</param>
+        public static void UpdateKnownIssuesListInCache(Dictionary<int, IssueInfo> issueInfos)
+        {
+            // get copy of list of issues and store them
+            var issueList = issueInfos.Values.ToList();
+            var success = LocalCache.WriteObject(LocalCache.KnownIssues, issueList);
+            if (success)
+            {
+                // if storing was successful, update last sync date
+                Settings.Default.LastIssueSyncDate = DateTime.Now.Date;
+                Settings.Default.Save();
+            }
+        }
+
+        /// <summary>
+        /// Method to get the list of known issues
+        /// </summary>
+        /// <returns>the list of known issues</returns>
+        public static List<IssueInfo> GetKnownIssueListFromCache()
+        {
+            List<IssueInfo> knownIssueList;
+            try
+            {
+                knownIssueList = LocalCache.ReadObject(LocalCache.KnownIssues, new List<IssueInfo>()) as List<IssueInfo> ?? new List<IssueInfo>();
+            }
+            catch (Exception exc)
+            {
+                Log.Error(
+                    "Die Liste bekannter Issues konnte nicht deserialisiert werden, es wurde jetzt eine leere Liste verwendet und die Liste bekannter Issues im Cache zurückgesetzt.",
+                    exc);
+                knownIssueList = new List<IssueInfo>();
+                LocalCache.WriteObject(LocalCache.KnownIssues, knownIssueList);
+            }
+            return knownIssueList;
+        }
+
 
         #endregion
     }

@@ -151,7 +151,7 @@ namespace Scorpio.Outlook.AddIn.Misc
                                 }
                                 catch (XmlException xe1)
                                 {
-                                    Log.Error("Failed to read value from settings file", xe1);
+                                    Log.Info("Failed to read value from settings file, using default value", xe1);
                                 }
                             }
                         }
@@ -159,7 +159,7 @@ namespace Scorpio.Outlook.AddIn.Misc
                     }
                     catch (XmlException xe2)
                     {
-                        Log.Error("Failed to read section from settings file", xe2);
+                        Log.Info("Failed to read section from settings file, using default value", xe2);
                     }
                 }
             }

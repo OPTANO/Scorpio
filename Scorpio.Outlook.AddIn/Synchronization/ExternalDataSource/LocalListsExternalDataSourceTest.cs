@@ -35,6 +35,7 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
     using System.Collections.Generic;
     
     using Scorpio.Outlook.AddIn.LocalObjects;
+    using Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource.Exceptions;
 
     /// <summary>
     /// An implementation of the external data source class working against local test data, can be used for tests to simulate special events
@@ -126,7 +127,7 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
                     this._issues.Add(
                         new IssueInfo()
                             {
-                                ProjectId = project.Id,
+                                ProjectId = project.Id.Value,
                                 ProjectShortName = project.Name,
                                 Id = issueId,
                                 Name = string.Format("{0} Issue", issueId)
@@ -155,8 +156,8 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
         {
             // for test purposes, to see what happens
             // throw new ConnectionException(null);
-            // throw new CrudException(entry, null);
-
+            // throw new CrudException(OperationType.Create, entry, null);
+            // throw new AccessViolationException();
             entry.Id = this._timeEntryCounter++;
             this._timeEntries.Add(entry);
             return entry;

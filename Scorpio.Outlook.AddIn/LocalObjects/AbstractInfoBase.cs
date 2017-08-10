@@ -44,7 +44,7 @@ namespace Scorpio.Outlook.AddIn.LocalObjects
         /// <summary>
         /// Gets or sets the id of the object
         /// </summary>
-        public int Id { get; set; }
+        public int? Id { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the object
@@ -59,7 +59,7 @@ namespace Scorpio.Outlook.AddIn.LocalObjects
         /// <returns>the hash code</returns>
         public override int GetHashCode()
         {
-            return this.Id.GetHashCode();
+            return this.Id.GetValueOrDefault(-1).GetHashCode() ^ this.Name.GetHashCode();
         }
 
         /// <summary>
@@ -73,15 +73,7 @@ namespace Scorpio.Outlook.AddIn.LocalObjects
             var otherType = obj.GetType();
             var thisType = this.GetType();
 
-            return other != null && object.Equals(this.Id, other.Id) && object.Equals(otherType, thisType);
-        }
-
-        /// <summary>Returns a string that represents the current object.</summary>
-        /// <returns>A string that represents the current object.</returns>
-        /// <filterpriority>2</filterpriority>
-        public override string ToString()
-        {
-            return string.Format("{0}: {1}", this.Id, this.Name);
+            return other != null && object.Equals(this.Id, other.Id) && object.Equals(this.Name, other.Name) && object.Equals(otherType, thisType);
         }
     }
 }

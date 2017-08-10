@@ -90,12 +90,7 @@ namespace Scorpio.Outlook.AddIn.UserInterface.ViewModel
         /// Backing field for <see cref="SynchronizeRedmineCommand"/>
         /// </summary>
         private ICommand _synchronizeRedmineCommand;
-
-        /// <summary>
-        /// Backing field for <see cref="ToggleExpansionCommand"/>
-        /// </summary>
-        private ICommand _toggleExpansionCommand;
-
+        
         /// <summary>
         /// The ui-context task scheduler.
         /// </summary>
@@ -110,18 +105,16 @@ namespace Scorpio.Outlook.AddIn.UserInterface.ViewModel
         /// </summary>
         public ScorpioTaskPaneViewModel()
         {
-            Globals.ThisAddIn.SyncState.ConnectionStateChanged += (sender, args) => { };
-            Globals.ThisAddIn.SyncState.StatusChanged += (sender, args) =>
-                {
-                    this.HoursCalendar = Globals.ThisAddIn.SyncState.HoursInView;
-                    this.HoursDay = Globals.ThisAddIn.SyncState.HoursInDay;
-                    this.HoursWeek = Globals.ThisAddIn.SyncState.HoursInWeek;
-                    this.HoursMonth = Globals.ThisAddIn.SyncState.HoursInMonth;
-                    this.ConnectString = Globals.ThisAddIn.SyncState.Status;
-
-                    var taskPaneTask = new Task(CommandManager.InvalidateRequerySuggested);
-                    taskPaneTask.Start(this.uiContext);
-                };
+                Globals.ThisAddIn.SyncState.StatusChanged += (sender, args) =>
+                    {
+                        this.HoursCalendar = Globals.ThisAddIn.SyncState.HoursInView;
+                        this.HoursDay = Globals.ThisAddIn.SyncState.HoursInDay;
+                        this.HoursWeek = Globals.ThisAddIn.SyncState.HoursInWeek;
+                        this.HoursMonth = Globals.ThisAddIn.SyncState.HoursInMonth;
+                        this.ConnectString = Globals.ThisAddIn.SyncState.Status;
+                        var taskPaneTask = new Task(CommandManager.InvalidateRequerySuggested);
+                        taskPaneTask.Start(this.uiContext);
+                    };
         }
 
         #endregion
@@ -153,7 +146,7 @@ namespace Scorpio.Outlook.AddIn.UserInterface.ViewModel
         #endregion
 
         #region Public properties
-
+        
         /// <summary>
         /// Gets or sets the string value which represents the current synchronization state.
         /// </summary>
@@ -287,19 +280,7 @@ namespace Scorpio.Outlook.AddIn.UserInterface.ViewModel
                        ?? (this._openCalendarCommand = new RelayCommand<object>(o => Globals.ThisAddIn.OpenCalendar(), o => true));
             }
         }
-
-        /// <summary>
-        /// Gets the command which toggles the expansion state of the task pane.
-        /// </summary>
-        public ICommand ToggleExpansionCommand
-        {
-            get
-            {
-                return this._toggleExpansionCommand
-                       ?? (this._toggleExpansionCommand = new RelayCommand<object>(o => Globals.ThisAddIn.ToggleTaskpaneSize(), o => true));
-            }
-        }
-
+        
         /// <summary>
         /// Gets the command which synchronizes issue and project information with redmine.
         /// </summary>

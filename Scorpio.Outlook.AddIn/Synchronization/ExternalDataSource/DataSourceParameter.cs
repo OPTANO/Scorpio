@@ -80,6 +80,11 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
         /// </summary>
         public int? UserId { get; set; }
 
+        /// <summary>
+        /// Gets or sets the user id to which the ticket is assigned, -1 means me
+        /// </summary>
+        public int? AssignedToUserId { get; set; }
+
         #endregion
     }
 }

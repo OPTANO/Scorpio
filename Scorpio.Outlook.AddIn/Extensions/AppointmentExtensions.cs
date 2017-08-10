@@ -3,7 +3,7 @@
 // ////////////////////////////////////////////////////////////////////////////////
 //                                                                   
 //        ORCONOMY GmbH Source Code                                   
-//        Copyright (c) 2010-2016 ORCONOMY GmbH                       
+//        Copyright (c) 2010-2017 ORCONOMY GmbH                       
 //        ALL RIGHTS RESERVED.                                        
 //                                                                    
 //    The entire contents of this file is protected by German and       
@@ -39,9 +39,6 @@ namespace Scorpio.Outlook.AddIn.Extensions
 
     using Microsoft.Office.Interop.Outlook;
 
-    using Redmine.Net.Api.Types;
-
-    using Scorpio.Outlook.AddIn.Cache;
     using Scorpio.Outlook.AddIn.Helper;
     using Scorpio.Outlook.AddIn.LocalObjects;
     using Scorpio.Outlook.AddIn.Misc;
@@ -59,25 +56,13 @@ namespace Scorpio.Outlook.AddIn.Extensions
         /// </summary>
         private static readonly ILog Log = log4net.LogManager.GetLogger(typeof(AppointmentExtensions));
 
+        /// <summary>
+        /// The Issue Cache
+        /// </summary>
+        private static Dictionary<string, int?> issueIdCache = new Dictionary<string, int?>();
         #endregion
 
         #region Public Methods and Operators
-
-        /// <summary>
-        /// Method to get the string representation of an appointment item
-        /// </summary>
-        /// <param name="item">the appointment</param>
-        /// <returns>the string representation</returns>
-        public static string GetStringRepresentation(this AppointmentItem item)
-        {
-            var stringRepresentation = string.Format(
-                        "{0} - {1}, {2}: {3}",
-                        item.Start,
-                        item.End,
-                        item.Location,
-                        item.Subject);
-            return stringRepresentation;
-        }
 
         /// <summary>
         /// Appends a message to an appointment body
@@ -117,13 +102,27 @@ namespace Scorpio.Outlook.AddIn.Extensions
                 return true;
             }
 
-            var issueId = item.GetAppointmentCustomId(Constants.FieldRedmineIssueId);
+            var issueId = item.GetIssueId();
             if (issueId != timeEntry.IssueInfo.Id)
             {
                 return true;
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Method to clear the is imported flag.
+        /// </summary>
+        /// <param name="item">
+        /// The item.
+        /// </param>
+        public static void ClearIsImported(this AppointmentItem item)
+        {
+            if (item != null)
+            {
+                item.SetAppointmentCustomId(Constants.FieldImportedFromRedmine, null);
+            }
         }
 
         /// <summary>
@@ -138,25 +137,13 @@ namespace Scorpio.Outlook.AddIn.Extensions
         }
 
         /// <summary>
-        /// Gets a custom int field value from an appointment
+        /// Gets the activity id
         /// </summary>
-        /// <param name="item">
-        /// The appointment item
-        /// </param>
-        /// <param name="fieldName">
-        /// The field name
-        /// </param>
-        /// <returns>
-        /// The id or null if no value is set
-        /// </returns>
-        public static int? GetAppointmentCustomId(this AppointmentItem item, string fieldName)
+        /// <param name="item">the appointment item</param>
+        /// <returns>the id if set</returns>
+        public static int? GetActivityId(this AppointmentItem item)
         {
-            var pid = item.UserProperties.Find(fieldName);
-            if (pid == null || pid.Value == null || string.IsNullOrWhiteSpace(pid.Value.ToString()))
-            {
-                return null;
-            }
-            return Convert.ToInt32(pid.Value);
+            return item != null ? item.GetAppointmentCustomId(Constants.FieldRedmineActivityId) : null;
         }
 
         /// <summary>
@@ -173,6 +160,61 @@ namespace Scorpio.Outlook.AddIn.Extensions
             }
 
             return (DateTime)prop.Value;
+        }
+
+        /// <summary>
+        /// Gets the issue id
+        /// </summary>
+        /// <param name="item">the appointment item</param>
+        /// <returns>the id if set</returns>
+        public static int? GetIssueId(this AppointmentItem item)
+        {
+            if (item != null)
+            {
+                int? issueID;
+                var itemEntryID = item.EntryID;
+                if (itemEntryID == null || !issueIdCache.TryGetValue(itemEntryID, out issueID))
+                {
+                   issueID = item.GetAppointmentCustomId(Constants.FieldRedmineIssueId);
+                    if (itemEntryID != null)
+                    {
+                        issueIdCache[item.EntryID] = issueID;
+                    }
+                }
+                return issueID;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the project id
+        /// </summary>
+        /// <param name="item">the appointment item</param>
+        /// <returns>the id if set</returns>
+        public static int? GetProjectId(this AppointmentItem item)
+        {
+            return item != null ? item.GetAppointmentCustomId(Constants.FieldRedmineProjectId) : null;
+        }
+
+        /// <summary>
+        /// Method to get the string representation of an appointment item
+        /// </summary>
+        /// <param name="item">the appointment</param>
+        /// <returns>the string representation</returns>
+        public static string GetStringRepresentation(this AppointmentItem item)
+        {
+            var stringRepresentation = string.Format("{0} - {1}, {2}: {3}", item.Start, item.End, item.Location, item.Subject);
+            return stringRepresentation;
+        }
+
+        /// <summary>
+        /// Gets the time entry id
+        /// </summary>
+        /// <param name="item">the appointment item</param>
+        /// <returns>the id if set</returns>
+        public static int? GetTimeEntryId(this AppointmentItem item)
+        {
+            return item != null ? item.GetAppointmentCustomId(Constants.FieldRedmineTimeEntryId) : null;
         }
 
         /// <summary>
@@ -221,6 +263,25 @@ namespace Scorpio.Outlook.AddIn.Extensions
         public static bool IsDeletedSet(this AppointmentItem item)
         {
             return item.IsCategorySet(AppointmentState.Deleted.Name);
+        }
+
+        /// <summary>
+        /// The method to get the value indicating whether the appointment is imported.
+        /// </summary>
+        /// <param name="item">
+        /// The item.
+        /// </param>
+        /// <returns>
+        /// The <see cref="bool"/> indicating whether the appointment is imported.
+        /// </returns>
+        public static bool IsImported(this AppointmentItem item)
+        {
+            if (item == null)
+            {
+                return false;
+            }
+            var isImportedValue = item.GetAppointmentCustomId(Constants.FieldImportedFromRedmine);
+            return isImportedValue.GetValueOrDefault(0) == 1;
         }
 
         /// <summary>
@@ -292,20 +353,26 @@ namespace Scorpio.Outlook.AddIn.Extensions
             {
                 return;
             }
+            if (state == AppointmentState.Synchronized)
+            {
+                Log.Warn(string.Format("Appointment state set to synchronized. #{0} Previus state: {1}", item.GetIssueId(), item.Categories));
+            }
             item.SetAppointmentState(state);
             item.Save();
         }
 
         /// <summary>
-        /// Sets a custom field id for an appointment
+        /// Method to set the activity id
         /// </summary>
-        /// <param name="item">The item to set</param>
-        /// <param name="fieldName">The field name</param>
-        /// <param name="value">The value</param>
-        public static void SetAppointmentCustomId(this AppointmentItem item, string fieldName, int? value)
+        /// <param name="item">
+        /// The appointment item.
+        /// </param>
+        /// <param name="id">
+        /// The id to set
+        /// </param>
+        public static void SetActivityId(this AppointmentItem item, int? id)
         {
-            var property = OutlookHelper.CreateOrGetProperty(item, fieldName, OlUserPropertyType.olInteger);
-            property.Value = value;
+            item.SetAppointmentCustomId(Constants.FieldRedmineActivityId, id);
         }
 
         /// <summary>
@@ -361,6 +428,80 @@ namespace Scorpio.Outlook.AddIn.Extensions
         }
 
         /// <summary>
+        /// The method to set the is imported.
+        /// </summary>
+        /// <param name="item">
+        /// The item.
+        /// </param>
+        /// <param name="isImported">
+        /// The is imported to set.
+        /// </param>
+        public static void SetIsImported(this AppointmentItem item, bool isImported)
+        {
+            if (item != null)
+            {
+                var value = isImported ? 1 : 0;
+                item.SetAppointmentCustomId(Constants.FieldImportedFromRedmine, value);
+            }
+        }
+
+        /// <summary>
+        /// Method to set the issue id
+        /// </summary>
+        /// <param name="item">
+        /// The appointment item.
+        /// </param>
+        /// <param name="issueId">
+        /// The id to set
+        /// </param>
+        public static void SetIssueId(this AppointmentItem item, int? issueId)
+        {
+            if (item != null)
+            {
+                var itemEntryID = item.EntryID;
+                if (itemEntryID != null)
+                {
+                    issueIdCache[itemEntryID] = issueId;
+                }
+                item.SetAppointmentCustomId(Constants.FieldRedmineIssueId, issueId);
+            }
+        }
+
+        /// <summary>
+        /// Method to set the project id
+        /// </summary>
+        /// <param name="item">
+        /// The appointment item.
+        /// </param>
+        /// <param name="projectId">
+        /// The id to set
+        /// </param>
+        public static void SetProjectId(this AppointmentItem item, int projectId)
+        {
+            if (item != null)
+            {
+                item.SetAppointmentCustomId(Constants.FieldRedmineProjectId, projectId);
+            }
+        }
+
+        /// <summary>
+        /// Method to set the time entry id
+        /// </summary>
+        /// <param name="item">
+        /// The appointment item.
+        /// </param>
+        /// <param name="id">
+        /// The id to set
+        /// </param>
+        public static void SetTimeEntryId(this AppointmentItem item, int? id)
+        {
+            if (item != null)
+            {
+                item.SetAppointmentCustomId(Constants.FieldRedmineTimeEntryId, id);
+            }
+        }
+
+        /// <summary>
         /// Updates the custom fields of an appointment
         /// </summary>
         /// <param name="appointment">
@@ -382,11 +523,11 @@ namespace Scorpio.Outlook.AddIn.Extensions
         /// The date/time when the item was updated in redmine the last time
         /// </param>
         public static void UpdateAppointmentFields(
-            this AppointmentItem appointment, 
-            int? timeEntryId, 
-            int projectId, 
-            int issueId, 
-            int activityId, 
+            this AppointmentItem appointment,
+            int? timeEntryId,
+            int projectId,
+            int issueId,
+            int activityId,
             DateTime lastRedmineUpdate)
         {
             // create user properties
@@ -395,7 +536,7 @@ namespace Scorpio.Outlook.AddIn.Extensions
                 appointment.SetAppointmentCustomId(Constants.FieldRedmineTimeEntryId, timeEntryId);
             }
             appointment.SetAppointmentCustomId(Constants.FieldRedmineProjectId, projectId);
-            appointment.SetAppointmentCustomId(Constants.FieldRedmineIssueId, issueId);
+            appointment.SetIssueId(issueId);
             appointment.SetAppointmentCustomId(Constants.FieldRedmineActivityId, activityId);
 
             // create last update field
@@ -412,7 +553,7 @@ namespace Scorpio.Outlook.AddIn.Extensions
         public static void UpdateAppointmentFromTimeEntry(this AppointmentItem item, TimeEntryInfo timeEntry, IssueInfo issue)
         {
             // create new calendar item
-            item.CreateAppointmentLocation(timeEntry.IssueInfo.Id, issue);
+            item.CreateAppointmentLocation(timeEntry.IssueInfo.Id.Value, issue);
             item.Subject = timeEntry.Name;
             item.Start = timeEntry.StartDateTime;
             var endTime = timeEntry.EndDateTime;
@@ -434,7 +575,12 @@ namespace Scorpio.Outlook.AddIn.Extensions
             }
 
             // create user properties
-            item.UpdateAppointmentFields(timeEntry.Id, timeEntry.ProjectInfo.Id, timeEntry.IssueInfo.Id, timeEntry.ActivityInfo.Id, timeEntry.UpdateTime);
+            item.UpdateAppointmentFields(
+                timeEntry.Id,
+                timeEntry.ProjectInfo.Id.Value,
+                timeEntry.IssueInfo.Id.Value,
+                timeEntry.ActivityInfo.Id.Value,
+                timeEntry.UpdateTime);
 
             if (timeEntry.IssueInfo.Id != Settings.Default.RedmineUseOvertimeIssue)
             {
@@ -443,6 +589,59 @@ namespace Scorpio.Outlook.AddIn.Extensions
             else
             {
                 item.SetAppointmentState(AppointmentState.SynchronizedOvertime);
+            }
+        }
+
+        #endregion
+
+        #region Methods
+
+        /// <summary>
+        /// Gets a custom int field value from an appointment
+        /// </summary>
+        /// <param name="item">
+        /// The appointment item
+        /// </param>
+        /// <param name="fieldName">
+        /// The field name
+        /// </param>
+        /// <returns>
+        /// The id or null if no value is set
+        /// </returns>
+        private static int? GetAppointmentCustomId(this AppointmentItem item, string fieldName)
+        {
+            var pid = item.UserProperties.Find(fieldName);
+            if (pid == null || pid.Value == null || string.IsNullOrWhiteSpace(pid.Value.ToString()))
+            {
+                return null;
+            }
+            return Convert.ToInt32(pid.Value);
+        }
+
+        /// <summary>
+        /// Sets a custom field id for an appointment
+        /// </summary>
+        /// <param name="item">The item to set</param>
+        /// <param name="fieldName">The field name</param>
+        /// <param name="value">The value</param>
+        private static void SetAppointmentCustomId(this AppointmentItem item, string fieldName, int? value)
+        {
+            // if no item is given, nothing can be done
+            if (item == null)
+            {
+                Log.Error(string.Format("No appointment is given, property '{0}' cannot be set.", fieldName));
+                return;
+            }
+
+            // get the corresponding property and set its value
+            var property = OutlookHelper.CreateOrGetProperty(item, fieldName, OlUserPropertyType.olInteger);
+            if (property == null)
+            {
+                Log.Error(string.Format("Property '{0}' of appointment {1} cannot be obtained and hence is not set.", fieldName));
+            }
+            else
+            {
+                property.Value = value;
             }
         }
 

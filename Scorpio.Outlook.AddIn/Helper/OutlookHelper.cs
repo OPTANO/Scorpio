@@ -32,6 +32,9 @@
 namespace Scorpio.Outlook.AddIn.Helper
 {
     using System;
+    using System.Runtime.InteropServices;
+
+    using log4net;
 
     using Microsoft.Office.Interop.Outlook;
 
@@ -42,6 +45,11 @@ namespace Scorpio.Outlook.AddIn.Helper
     /// </summary>
     public class OutlookHelper
     {
+        /// <summary>
+        /// The logger class
+        /// </summary>
+        private static readonly ILog Log = log4net.LogManager.GetLogger(typeof(OutlookHelper));
+
         #region Public Methods and Operators
 
         /// <summary>
@@ -53,14 +61,23 @@ namespace Scorpio.Outlook.AddIn.Helper
         /// <returns>The user property field</returns>
         public static UserDefinedProperty CreateOrGetProperty(MAPIFolder folder, string name, OlUserPropertyType type)
         {
-            foreach (var prop in folder.UserDefinedProperties)
+            try
             {
-                if (((UserDefinedProperty)prop).Name == name)
+                foreach (var prop in folder.UserDefinedProperties)
                 {
-                    return (UserDefinedProperty)prop;
+                    if (((UserDefinedProperty)prop).Name == name)
+                    {
+                        return (UserDefinedProperty)prop;
+                    }
                 }
+
+                return folder.UserDefinedProperties.Add(name, type, true);
             }
-            return folder.UserDefinedProperties.Add(name, type, true);
+            catch (COMException interoptComException)
+            {
+                Log.Error(string.Format("Das Feld '{0}' konnte nicht hinzugefügt werden.", name), interoptComException);
+                return null;
+            }
         }
 
         /// <summary>

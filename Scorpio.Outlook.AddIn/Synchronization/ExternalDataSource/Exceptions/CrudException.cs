@@ -43,7 +43,7 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource.Exceptions
         /// <summary>
         /// Text to be displayed in the message
         /// </summary>
-        private const string MessageText = "Error during CRUD operation on object {0}\n";
+        private const string MessageText = "Error during CRUD operation on object";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CrudException"/> class.
@@ -53,8 +53,7 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource.Exceptions
         /// The object to be created.
         /// </param>
         /// <param name="innerException">the inner exception</param>
-        public CrudException(OperationType type, TimeEntryInfo correspondingObject, Exception innerException)
-            : base(string.Format(MessageText, correspondingObject), innerException)
+        public CrudException(OperationType type, TimeEntryInfo correspondingObject, Exception innerException) : base(MessageText, innerException)
         {
             this.OperationType = type;
             this.CorrespondingObject = correspondingObject;

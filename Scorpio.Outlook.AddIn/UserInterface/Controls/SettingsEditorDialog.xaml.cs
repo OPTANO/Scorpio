@@ -34,10 +34,15 @@ namespace Scorpio.Outlook.AddIn.UserInterface.Controls
     using System;
     using System.Collections.ObjectModel;
     using System.ComponentModel;
+    using System.Diagnostics;
     using System.Linq;
     using System.Runtime.CompilerServices;
     using System.Windows;
     using System.Windows.Input;
+
+    using DevExpress.Mvvm.POCO;
+
+    using log4net;
 
     using Scorpio.Outlook.AddIn.Cache;
     using Scorpio.Outlook.AddIn.LocalObjects;
@@ -51,6 +56,11 @@ namespace Scorpio.Outlook.AddIn.UserInterface.Controls
     public partial class SettingsEditorDialog : INotifyPropertyChanged
     {
         #region Fields
+
+        /// <summary>
+        /// Logging for error logging
+        /// </summary>
+        private static readonly ILog Log = log4net.LogManager.GetLogger(typeof(SettingsEditorDialog));
 
         /// <summary>
         /// Private field for the redmine API key.
@@ -96,16 +106,47 @@ namespace Scorpio.Outlook.AddIn.UserInterface.Controls
         /// </summary>
         public SettingsEditorDialog()
         {
-            this.InitializeComponent();
-            this.DataContext = this;
+            var stopWatch = Stopwatch.StartNew();
+            stopWatch.Start();
 
-            this.RedmineApiKey = Settings.Default.RedmineApiKey;
-            this.RedmineUrl = Settings.Default.RedmineURL;
-            this.FavoriteIssues = new ObservableCollection<IssueInfo>(Globals.ThisAddIn.Synchronizer.FavoriteIssues);
-            this.AvailableIssues = new ObservableCollection<IssueInfo>(Globals.ThisAddIn.Synchronizer.AllIssues.Values);
-            this.RefreshTime = Settings.Default.RefreshTime;
-            this.NumberIssues = Settings.Default.LimitForIssueNumber;
-            this.NumberIssuesLastUsed = Settings.Default.NumberLastUsedIssues;
+            this.InitializeComponent();
+            if (!this.IsInDesignMode())
+            {
+                Debug.WriteLine($"InitializeComponent after {stopWatch.ElapsedMilliseconds}ms");
+
+
+                this.RedmineApiKey = Settings.Default.RedmineApiKey;
+                this.RedmineUrl = Settings.Default.RedmineURL;
+                try
+                {
+                    this.FavoriteIssues = new ObservableCollection<IssueInfo>(Globals.ThisAddIn.Synchronizer.FavoriteIssues);
+                }
+                catch (Exception e)
+                {
+                    this.FavoriteIssues = new ObservableCollection<IssueInfo>();
+                    Log.Error("Error while setting the favorite issues in the settings dialog", e);
+                }
+                Debug.WriteLine($"FacoriteIssues after {stopWatch.ElapsedMilliseconds}ms");
+
+                try
+                {
+                    this.AvailableIssues = new ObservableCollection<IssueInfo>(Globals.ThisAddIn.Synchronizer.AllIssues.Values);
+                }
+                catch (Exception e)
+                {
+                    this.AvailableIssues = new ObservableCollection<IssueInfo>();
+                    Log.Error("Error while setting the overall issue list in the settings dialog", e);
+                }
+                Debug.WriteLine($"AvailableIssues after {stopWatch.ElapsedMilliseconds}ms");
+
+                this.RefreshTime = Settings.Default.RefreshTime;
+                this.NumberIssues = Settings.Default.LimitForIssueNumber;
+                this.NumberIssuesLastUsed = Settings.Default.NumberLastUsedIssues;
+                Debug.WriteLine($"Finished ctor after {stopWatch.ElapsedMilliseconds}ms");
+                stopWatch.Stop();
+                this.DataContext = this;
+            }
+         
         }
 
         #endregion

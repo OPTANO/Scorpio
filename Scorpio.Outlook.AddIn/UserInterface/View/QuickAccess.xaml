@@ -6,7 +6,7 @@
              xmlns:viewModel="clr-namespace:Scorpio.Outlook.AddIn.UserInterface.ViewModel"
              xmlns:dxb="http://schemas.devexpress.com/winfx/2008/xaml/bars"
              mc:Ignorable="d" 
-             d:DataContext="{d:DesignInstance viewModel:ScorpioTaskPaneViewModel, IsDesignTimeCreatable=True}"
+             d:DataContext="{d:DesignInstance viewModel:ScorpioTaskPaneViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="300" d:DesignWidth="300">
     
     <UserControl.Resources>
@@ -18,8 +18,7 @@
     </UserControl.Resources>
     
     <Grid x:Name="ContainerGrid">
-        <dxb:ToolBarControl Orientation="{Binding ElementName=ContainerGrid, Path=ActualWidth, ConverterParameter=150, Converter={StaticResource TaskPaneWidthToVisibilityOrientationConverter}}" AllowQuickCustomization="False" AllowCustomizationMenu="False" IsMultiLine="True" RotateWhenVertical="False" BarItemDisplayMode="ContentAndGlyph">
-            <dxb:BarButtonItem Content="Aus-/Ein- klappen" GlyphAlignment="Top" Command="{Binding ToggleExpansionCommand}" LargeGlyph="/Scorpio.Outlook.AddIn;component/Resources/application_side_expand.png" RibbonStyle="Large"/>
+        <dxb:ToolBarControl Orientation="Vertical" AllowQuickCustomization="False" AllowCustomizationMenu="False" IsMultiLine="False" RotateWhenVertical="False" BarItemDisplayMode="ContentAndGlyph">
             <dxb:BarButtonItem Content="Synchronisiere Redmine" GlyphAlignment="Top" Command="{Binding SynchronizeRedmineCommand}" LargeGlyph="/Scorpio.Outlook.AddIn;component/Resources/arrow_refresh.png" RibbonStyle="Large"/>
             <dxb:BarButtonItem Content="Zeiteinträge zurücksetzen" GlyphAlignment="Top" Command="{Binding ResetTimeEntriesCommand}" LargeGlyph="/Scorpio.Outlook.AddIn;component/Resources/arrow_undo.png" RibbonStyle="Large"/>
             <dxb:BarButtonItem Content="Zeiteinträge speichern" GlyphAlignment="Top" Command="{Binding SaveTimeEntriesCommand}" LargeGlyph="/Scorpio.Outlook.AddIn;component/Resources/diskette.png" RibbonStyle="Large"/>

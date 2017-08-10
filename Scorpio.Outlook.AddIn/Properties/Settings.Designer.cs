@@ -12,7 +12,7 @@ namespace Scorpio.Outlook.AddIn.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "14.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "15.1.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -39,7 +39,7 @@ namespace Scorpio.Outlook.AddIn.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Configuration.SettingsProviderAttribute(typeof(Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider))]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("192.168.0.93")]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://services.orconomy.de/redmine")]
         public string RedmineURL {
             get {
                 return ((string)(this["RedmineURL"]));
@@ -115,6 +115,7 @@ namespace Scorpio.Outlook.AddIn.Properties {
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Configuration.SettingsProviderAttribute(typeof(Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider))]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("30")]
         public double RefreshTime {
@@ -127,6 +128,7 @@ namespace Scorpio.Outlook.AddIn.Properties {
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Configuration.SettingsProviderAttribute(typeof(Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider))]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("100")]
         public int LimitForIssueNumber {
@@ -139,6 +141,7 @@ namespace Scorpio.Outlook.AddIn.Properties {
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Configuration.SettingsProviderAttribute(typeof(Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider))]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("15")]
         public int NumberLastUsedIssues {

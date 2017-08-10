@@ -6,7 +6,7 @@
       <Value Profile="(Default)">0a074de714f3ddee51d64cd8c8a0722846bf535d</Value>
     </Setting>
     <Setting Name="RedmineURL" Provider="Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider" Type="System.String" Scope="User">
-      <Value Profile="(Default)">192.168.0.93</Value>
+      <Value Profile="(Default)">https://services.orconomy.de/redmine</Value>
     </Setting>
     <Setting Name="RedmineHolidayIssue" Provider="Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">80</Value>
@@ -23,13 +23,13 @@
     <Setting Name="FavoriteIssues" Provider="Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="RefreshTime" Type="System.Double" Scope="User">
+    <Setting Name="RefreshTime" Provider="Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider" Type="System.Double" Scope="User">
       <Value Profile="(Default)">30</Value>
     </Setting>
-    <Setting Name="LimitForIssueNumber" Type="System.Int32" Scope="User">
+    <Setting Name="LimitForIssueNumber" Provider="Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">100</Value>
     </Setting>
-    <Setting Name="NumberLastUsedIssues" Type="System.Int32" Scope="User">
+    <Setting Name="NumberLastUsedIssues" Provider="Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">15</Value>
     </Setting>
   </Settings>

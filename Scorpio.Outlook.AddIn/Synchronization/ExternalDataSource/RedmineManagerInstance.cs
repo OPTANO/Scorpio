@@ -108,6 +108,10 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
 
                 // update object and return it
                 item.Id = createdObject.Id;
+                if (createdObject.Project != null)
+                {
+                    item.ProjectInfo = new ProjectInfo() { Id = createdObject.Project.Id, Name = createdObject.Project.Name };
+                }
                 return item;
             }
             catch (RedmineException redmineException)
@@ -134,16 +138,14 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
             // get base info
             var user = this.GetCurrentUser();
             var activityInfo = item.ActivityInfo;
-            var projectInfo = item.ProjectInfo;
             var issueInfo = item.IssueInfo;
 
             // create new time entry for redmine
             var timeEntry = new TimeEntry
                                 {
-                                    Activity = new IdentifiableName { Id = activityInfo.Id, Name = activityInfo.Name },
-                                    Issue = new IdentifiableName { Id = issueInfo.Id, Name = issueInfo.Name },
-                                    Project = new IdentifiableName { Id = projectInfo.Id, Name = projectInfo.Name },
-                                    User = new IdentifiableName { Id = user.Id },
+                                    Activity = new IdentifiableName { Id = activityInfo.Id.Value, Name = activityInfo.Name },
+                                    Issue = new IdentifiableName { Id = issueInfo.Id.Value, Name = issueInfo.Name },
+                                    User = new IdentifiableName { Id = user.Id.Value },
                                     Comments = item.Name,
                                     CreatedOn = DateTime.Now,
                                     UpdatedOn = item.UpdateTime,
@@ -169,9 +171,9 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
             }
 
             // set the Id if there is already one
-            if (item.Id > 0)
+            if (item.Id != null)
             {
-                timeEntry.Id = item.Id;
+                timeEntry.Id = item.Id.Value;
             }
             return timeEntry;
         }
@@ -191,6 +193,10 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
                 // write the object to redmine
                 this._redmineApi.UpdateObject(timeEntry.Id.ToString(), timeEntry);
 
+                if (timeEntry.Project != null)
+                {
+                    item.ProjectInfo = new ProjectInfo() { Id = timeEntry.Project.Id, Name = timeEntry.Project.Name };
+                }
                 // update object and return it
                 return item;
             }
@@ -308,10 +314,17 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
         {
             var parameter = this.GetParametersForQuery(parameters);
             var issues = this._redmineApi.GetObjectList<Issue>(parameter);
-
+            
             var issueInfos =
-                issues.Select(i => new IssueInfo() { Id = i.Id, Name = i.Subject, ProjectShortName = i.Project.Name, ProjectId = i.Project.Id, })
-                    .ToList();
+                issues.Select(
+                    i =>
+                        new IssueInfo()
+                            {
+                                Id = i.Id,
+                                Name = i.Subject,
+                                ProjectShortName = i.Project.Name,
+                                ProjectId = i.Project.Id
+                            }).ToList();
 
             return issueInfos;
         }
@@ -432,8 +445,12 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
                 {
                     queryParameter.Add("issue_id", parameter.IssueId.Value.ToString());
                 }
+                if (parameter.AssignedToUserId.HasValue)
+                {
+                    queryParameter.Add("assigned_to_id", parameter.AssignedToUserId.Value == -1 ? "me" : parameter.AssignedToUserId.Value.ToString());
+                }
             }
-
+            
             return queryParameter;
         }
     }

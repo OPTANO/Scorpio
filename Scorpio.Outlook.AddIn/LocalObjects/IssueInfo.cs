@@ -35,6 +35,7 @@ namespace Scorpio.Outlook.AddIn.LocalObjects
 
     /// <summary>
     /// Class that encapsulates information for displaying issue and project information on a time entry appointment.
+    /// Do not include the project id in the equals and hash method of the issue, because this information can change (ticket is moved to another project), but the ticket remains the same.
     /// </summary>
     [Serializable]
     public class IssueInfo : AbstractInfoBase
@@ -62,7 +63,7 @@ namespace Scorpio.Outlook.AddIn.LocalObjects
                 return string.Format("#{0} - {1} - [{2}]", this.Id, this.Name, this.ProjectShortName);
             }
         }
-
+        
         /// <summary>
         /// Gets or sets the id of the corresponding project
         /// </summary>
@@ -74,13 +75,5 @@ namespace Scorpio.Outlook.AddIn.LocalObjects
         public string ProjectShortName { get; set; }
 
         #endregion
-
-        /// <summary>Returns a string that represents the current object.</summary>
-        /// <returns>A string that represents the current object.</returns>
-        /// <filterpriority>2</filterpriority>
-        public override string ToString()
-        {
-            return string.Format("{0}, {3}, {1}, {2}", this.Id, this.ProjectId, this.ProjectShortName, this.Name);
-        }
     }
 }

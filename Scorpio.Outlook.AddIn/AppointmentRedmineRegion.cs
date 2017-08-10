@@ -300,12 +300,14 @@ namespace Scorpio.Outlook.AddIn
                 if (!issueAlreadyKnown)
                 {
                     // try to get the infos
-                    var issueInfo = synchronizer.ReloadIssueById(issueId);
-                    if (issueInfo != null)
+                    var issueInfoAndNewIssueList = synchronizer.ReloadIssueById(issueId);
+                    foreach (var issueInfo in issueInfoAndNewIssueList.Item2)
                     {
                         this.issueList.Add(issueInfo);
                     }
-                    return true;
+
+                    return issueInfoAndNewIssueList.Item2.Any();
+
                 }
             }
             return false;
@@ -320,7 +322,7 @@ namespace Scorpio.Outlook.AddIn
             if (appointment != null)
             {
                 var projectIdField = appointment.UserProperties.Find(Constants.FieldRedmineProjectId);
-                var issueIdField = appointment.UserProperties.Find(Constants.FieldRedmineIssueId);
+                var issueId = appointment.GetIssueId();
 
                 if (projectIdField != null)
                 {
@@ -336,16 +338,16 @@ namespace Scorpio.Outlook.AddIn
                     this.lnkProject.Enabled = false;
                 }
 
-                if (issueIdField != null)
+                if (issueId.HasValue)
                 {
-                    var info = Globals.ThisAddIn.Synchronizer.BuildIssueInformation(Convert.ToInt32(issueIdField.Value));
+                    var info = Globals.ThisAddIn.Synchronizer.BuildIssueInformation(issueId.Value);
                     this.lnkIssue.Text = info.Item2;
                     this.lnkIssue.Links.Remove(this.lnkIssue.Links[0]);
                     this.lnkIssue.Links.Add(0, this.lnkIssue.Text.Length, info.Item1);
                     this.lnkIssue.Enabled = true;
 
                     // set the current issue
-                    this.issueSelector.EditValue = Convert.ToInt32(issueIdField.Value);
+                    this.issueSelector.EditValue = issueId.Value;
                 }
                 else
                 {
@@ -395,5 +397,6 @@ namespace Scorpio.Outlook.AddIn
 
             #endregion
         }
+        
     }
 }

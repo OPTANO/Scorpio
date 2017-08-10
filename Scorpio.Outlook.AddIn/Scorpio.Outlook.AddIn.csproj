@@ -38,13 +38,13 @@
     <OldToolsVersion>4.0</OldToolsVersion>
     <VSTO_TrustAssembliesLocation>true</VSTO_TrustAssembliesLocation>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <PublishUrl>\\orcserv01\Daten\Software\OrcTool\</PublishUrl>
-    <InstallUrl>\\orcserv01\Daten\Software\OrcTool\</InstallUrl>
+    <PublishUrl>\\orcserv01\Daten\Software\SCORPIO Release\</PublishUrl>
+    <InstallUrl>\\orcserv01\Daten\Software\SCORPIO Release\</InstallUrl>
     <TargetCulture>de</TargetCulture>
-    <ApplicationVersion>1.3.1.1</ApplicationVersion>
+    <ApplicationVersion>1.4.2.1</ApplicationVersion>
     <AutoIncrementApplicationRevision>true</AutoIncrementApplicationRevision>
     <UpdateEnabled>true</UpdateEnabled>
-    <UpdateInterval>1</UpdateInterval>
+    <UpdateInterval>0</UpdateInterval>
     <UpdateIntervalUnits>days</UpdateIntervalUnits>
     <ProductName>Scorpio.Outlook.AddIn</ProductName>
     <PublisherName>ORCONOMY GmbH</PublisherName>
@@ -413,6 +413,7 @@
     <Compile Include="Synchronization\ExternalDataSource\ExternalDataSourceFactory.cs" />
     <Compile Include="Synchronization\ExternalDataSource\RedmineManagerInstance.cs" />
     <Compile Include="Synchronization\ExternalDataSource\LocalListsExternalDataSourceTest.cs" />
+    <Compile Include="Synchronization\Helper\DownloadHelper.cs" />
     <Compile Include="Synchronization\SyncState.cs" />
     <Compile Include="Synchronization\UiUserInfoSynchronizer.cs" />
     <Compile Include="UserInterface\Controls\RecurringTimeEntryDialog.xaml.cs">
@@ -549,6 +550,11 @@
   <ItemGroup>
     <None Include="Resources\magnifier.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\outlook_calendar_day.png" />
+    <Resource Include="Resources\outlook_calendar_month.png" />
+    <Resource Include="Resources\outlook_calendar_week.png" />
+  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
@@ -560,7 +566,7 @@
     <ManifestKeyFile>Scorpio.Outlook.AddIn_1_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>2DC313C971EF81C7CA8A6D1440071037423F5B8E</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>AF74EFFA84873A57CBD45DBD83645B3596EA1DA5</ManifestCertificateThumbprint>
   </PropertyGroup>
   <!-- Include the build rules for a C# project. -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
