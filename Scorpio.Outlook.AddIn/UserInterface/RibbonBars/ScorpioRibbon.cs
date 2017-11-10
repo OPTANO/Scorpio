@@ -80,7 +80,6 @@ namespace Scorpio.Outlook.AddIn.UserInterface.RibbonBars
             if ("Microsoft.Outlook.Appointment".Equals(ribbonID))
             {
                 return GetResourceText("Scorpio.Outlook.AddIn.UserInterface.RibbonBars.ScorpioRibbonAppointment.xml");
-                ;
             }
             return null;
         }

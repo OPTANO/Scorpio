@@ -53,7 +53,6 @@ namespace Scorpio.Outlook.AddIn
     using Scorpio.Outlook.AddIn.LocalObjects;
     using Scorpio.Outlook.AddIn.Misc;
     using Scorpio.Outlook.AddIn.Properties;
-    using Scorpio.Outlook.AddIn.Synchronization;
     using Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource;
     using Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource.Exceptions;
     using Scorpio.Outlook.AddIn.Synchronization.Helper;
@@ -134,6 +133,7 @@ namespace Scorpio.Outlook.AddIn
             Globals.ThisAddIn.SyncState.Status = "Nicht verbunden";
             this.LastUsedIssues = new List<IssueInfo>();
             this.FavoriteIssues = new List<IssueInfo>();
+            this.WatchedProjects = new List<ProjectInfo>();
 
             // At startup, register all appointments in the calendar for change tracking.
             foreach (var item in this.Calendar.Items)
@@ -159,6 +159,92 @@ namespace Scorpio.Outlook.AddIn
         /// Event is raised when an appointment has changed
         /// </summary>
         public event EventHandler AppointmentChanged;
+
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>
+        /// Gets a list of all issues
+        /// </summary>
+        public IDictionary<int, IssueInfo> AllIssues
+        {
+            get
+            {
+                return this._issues;
+            }
+        }
+
+        /// <summary>
+        /// Gets the reference to the redmine calendar
+        /// </summary>
+        public MAPIFolder Calendar { get; private set; }
+
+        /// <summary>
+        /// Gets the items collection of the redmine calendar. This reference has to be preserved 
+        /// in order to keep the ItemAdd listener on the item collection.
+        /// </summary>
+        public Items CalendarItems { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether a forced sync with save is possible at the moment
+        /// </summary>
+        public bool CanSyncTimeEntries { get; private set; }
+
+        /// <summary>
+        /// Gets the URL to the external system
+        /// </summary>
+        public string ConnectionUrl
+        {
+            get
+            {
+                return Settings.Default.RedmineURL.Last() == '/'
+                           ? Settings.Default.RedmineURL.Substring(0, Settings.Default.RedmineURL.Length - 1)
+                           : Settings.Default.RedmineURL;
+            }
+        }
+
+        /// <summary>
+        /// Gets the user which is currently logged into redmine.
+        /// </summary>
+        public UserInfo CurrentUser { get; private set; }
+
+        /// <summary>
+        /// Gets the current user name.
+        /// </summary>
+        public string CurrentUserName
+        {
+            get
+            {
+                return this.CurrentUser != null ? this.CurrentUser.Name : string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Gets a list of issues that were marked as favorite issues.
+        /// </summary>
+        public List<IssueInfo> FavoriteIssues { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether there is a connection to the redmine system
+        /// </summary>
+        public bool IsConnected
+        {
+            get
+            {
+                return this._externalDataSource != null && this.CurrentUser != null;
+            }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether or not a synchronization of projects and issues is in progress.
+        /// </summary>
+        public bool IsConnecting { get; private set; }
+
+        /// <summary>
+        /// Gets a list of previously used issues
+        /// </summary>
+        public List<IssueInfo> LastUsedIssues { get; private set; }
 
         #endregion
 
@@ -254,12 +340,15 @@ namespace Scorpio.Outlook.AddIn
                         // hence the usual ticket reloading is triggered, which updates all tickets from redmine
 
                         // start reloading of issues
-                        var reloadedIssues = DownloadHelper.ReloadIssueInfoExtended(issueId, this._externalDataSource, this.AllIssues.Values.ToList());
+                        var reloadedIssues = DownloadHelper.ReloadIssueInfoExtended(
+                            issueId,
+                            this._externalDataSource,
+                            this.AllIssues.Values.ToList());
 
                         // get all new issues and add them to the issue list
                         var newIssues = reloadedIssues.Keys.Except(this.AllIssues.Keys).ToList();
                         reloadedIssues.Where(i => newIssues.Contains(i.Key)).ForEach(i => this.AllIssues.Add(i.Key, i.Value));
-                        
+
                         // update the known issue list
                         var issueList = this.AllIssues.Values.Distinct().ToList();
                         LocalCache.WriteObject(LocalCache.KnownIssues, issueList);
@@ -273,6 +362,8 @@ namespace Scorpio.Outlook.AddIn
                         Log.Info(infoText);
                         newIssueList.AddRange(reloadedIssues.Values.Where(i => newIssues.Contains(i.Id.GetValueOrDefault(-1))));
                     }
+
+                    // if any of the new issues contains a new project, we do not reload the project, this is done if a time entry of the ticket with the new project is saved.
 
                     // if still no ticket can be found, log a warning 
                     if (issueInfo == null)
@@ -484,7 +575,6 @@ namespace Scorpio.Outlook.AddIn
             }
         }
 
-        
         /// <summary>
         /// Creates a time entry for an appointment in redmine
         /// </summary>
@@ -598,6 +688,17 @@ namespace Scorpio.Outlook.AddIn
             this._issues.TryGetValue(issueId.Value, out issueInfo);
             this._projects.TryGetValue(projectId.Value, out projectInfo);
 
+            // handle case that project info is unknown (can happen, if ticket was loaded separate, #19752)
+            if (projectInfo == null)
+            {
+                var projectAndIssueInfo = DownloadHelper.LoadProjectWithIssues(projectId.Value, this._externalDataSource);
+                projectAndIssueInfo.Projects.Where(p => p.Id.HasValue && !this._projects.ContainsKey(p.Id.Value))
+                    .ForEach(p => this._projects.Add(p.Id.Value, p));
+                projectAndIssueInfo.Issues.Where(i => i.Id.HasValue && !this._issues.ContainsKey(i.Id.Value))
+                    .ForEach(i => this._issues.Add(i.Id.Value, i));
+                projectInfo = projectAndIssueInfo.Projects.FirstOrDefault(p => object.Equals(p.Id, projectId.Value));
+            }
+
             TimeEntryInfo timeEntryInfoToCreate = null;
             if (activityInfo != null && issueInfo != null && projectInfo != null)
             {
@@ -651,9 +752,6 @@ namespace Scorpio.Outlook.AddIn
                 throw;
             }
         }
-
-        
-        
 
         /// <summary>
         /// Gets the default activity for time entries.
@@ -718,9 +816,12 @@ namespace Scorpio.Outlook.AddIn
 
                 // load issues
                 this._issues = DownloadHelper.DownloadIssues(newProjects, this._issues, this._externalDataSource);
-                
+
                 // update the special issue infos
-                this.UpdateSpecialIssueInformation();
+                this.UpdateSpecialInformation();
+
+                // refresh the issue state of the watched project's tickets
+                this.RefreshIssueStatus();
 
                 // update the settings and display correct state
                 Globals.ThisAddIn.SyncState.Status = "Verbunden";
@@ -743,13 +844,15 @@ namespace Scorpio.Outlook.AddIn
         }
 
         /// <summary>
-        /// Method called to update the special issue infos
+        /// Method called to update the special issue and project infos
         /// </summary>
-        private void UpdateSpecialIssueInformation()
+        private void UpdateSpecialInformation()
         {
             // update favorite and last used issues
             this.SetSpecialIssues(Settings.Default.LastUsedIssues, this.LastUsedIssues);
             this.SetSpecialIssues(Settings.Default.FavoriteIssues, this.FavoriteIssues);
+            this.SetSpecialProjects(Settings.Default.WatchedProjects, this.WatchedProjects);
+            this.UpdateWatchedProjectListInDataSource();
 
             // update the last used issues
             this.UpdateLastUsedIssues();
@@ -826,8 +929,7 @@ namespace Scorpio.Outlook.AddIn
              * synchronizer sets another custom property: IsImported. This indicates that we must not change the state to modified here.
              */
             var isImported = appItem.IsImported();
-            if ((appItem.GetIssueId().HasValue && !isImported)
-                || (!appItem.GetIssueId().HasValue && this.TryGuessIssue(appItem) != null))
+            if ((appItem.GetIssueId().HasValue && !isImported) || (!appItem.GetIssueId().HasValue && this.TryGuessIssue(appItem) != null))
             {
                 appItem.SetAppointmentState(AppointmentState.Modified);
             }
@@ -1121,6 +1223,39 @@ namespace Scorpio.Outlook.AddIn
         }
 
         /// <summary>
+        /// Method to set special project
+        /// </summary>
+        /// <param name="specialProjectIds">the ids of the special project, concated using ";"</param>
+        /// <param name="projectList">the project list to store the project in</param>
+        private void SetSpecialProjects(string specialProjectIds, List<ProjectInfo> projectList)
+        {
+            var projects = this._projects;
+
+            // create last used issues
+            if (!string.IsNullOrWhiteSpace(specialProjectIds))
+            {
+                projectList.Clear();
+                foreach (var item in specialProjectIds.Split(';'))
+                {
+                    try
+                    {
+                        var projectId = Convert.ToInt32(item);
+                        ProjectInfo projectInfo;
+                        if (projects.TryGetValue(projectId, out projectInfo))
+                        {
+                            projectList.Add(projectInfo);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        var msg = string.Format("Could not add project with id {0} to list of watched projects.", item);
+                        Log.Error(msg, ex);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Tries to guess the correct issue from the appointment subject line
         /// </summary>
         /// <param name="item">The appointment item</param>
@@ -1145,6 +1280,24 @@ namespace Scorpio.Outlook.AddIn
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// Updates the cached project and issue info.
+        /// </summary>
+        /// <param name="resultEntry">
+        /// The time entry info
+        /// </param>
+        private void UpdateCache(TimeEntryInfo resultEntry)
+        {
+            if (resultEntry.ProjectInfo.Id.HasValue)
+            {
+                this._projects[resultEntry.ProjectInfo.Id.Value] = resultEntry.ProjectInfo;
+            }
+            if (resultEntry.IssueInfo.Id.HasValue)
+            {
+                this._issues[resultEntry.IssueInfo.Id.Value] = resultEntry.IssueInfo;
+            }
         }
 
         /// <summary>
@@ -1179,24 +1332,6 @@ namespace Scorpio.Outlook.AddIn
         }
 
         /// <summary>
-        /// Updates the cached project and issue info.
-        /// </summary>
-        /// <param name="resultEntry">
-        /// The time entry info
-        /// </param>
-        private void UpdateCache(TimeEntryInfo resultEntry)
-        {
-            if (resultEntry.ProjectInfo.Id.HasValue)
-            {
-                this._projects[resultEntry.ProjectInfo.Id.Value] = resultEntry.ProjectInfo;
-            }
-            if (resultEntry.IssueInfo.Id.HasValue)
-            {
-                this._issues[resultEntry.IssueInfo.Id.Value] = resultEntry.IssueInfo;
-            }
-        }
-
-        /// <summary>
         /// Method to update the list of the issues last used
         /// </summary>
         private void UpdateLastUsedIssues()
@@ -1221,93 +1356,62 @@ namespace Scorpio.Outlook.AddIn
                 Settings.Default.Save();
             }
         }
-
-        #endregion
-
-        #region Public properties
-
-        /// <summary>
-        /// Gets the user which is currently logged into redmine.
-        /// </summary>
-        public UserInfo CurrentUser { get; private set; }
-
-        /// <summary>
-        /// Gets the reference to the redmine calendar
-        /// </summary>
-        public MAPIFolder Calendar { get; private set; }
-
-        /// <summary>
-        /// Gets the items collection of the redmine calendar. This reference has to be preserved 
-        /// in order to keep the ItemAdd listener on the item collection.
-        /// </summary>
-        public Items CalendarItems { get; private set; }
-
-        /// <summary>
-        /// Gets a value indicating whether there is a connection to the redmine system
-        /// </summary>
-        public bool IsConnected
-        {
-            get
-            {
-                return this._externalDataSource != null && this.CurrentUser != null;
-            }
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether or not a synchronization of projects and issues is in progress.
-        /// </summary>
-        public bool IsConnecting { get; private set; }
-
-        /// <summary>
-        /// Gets a value indicating whether a forced sync with save is possible at the moment
-        /// </summary>
-        public bool CanSyncTimeEntries { get; private set; }
-
-        /// <summary>
-        /// Gets a list of all issues
-        /// </summary>
-        public IDictionary<int, IssueInfo> AllIssues
-        {
-            get
-            {
-                return this._issues;
-            }
-        }
-
-        /// <summary>
-        /// Gets a list of previously used issues
-        /// </summary>
-        public List<IssueInfo> LastUsedIssues { get; private set; }
-
+        
         /// <summary>
         /// Gets a list of issues that were marked as favorite issues.
         /// </summary>
-        public List<IssueInfo> FavoriteIssues { get; private set; }
+        public List<ProjectInfo> WatchedProjects { get; private set; }
 
+    
         /// <summary>
-        /// Gets the URL to the external system
+        /// Gets the list of all projects.
         /// </summary>
-        public string ConnectionUrl
+        public List<ProjectInfo> AllProjects
         {
             get
             {
-                return Settings.Default.RedmineURL.Last() == '/'
-                           ? Settings.Default.RedmineURL.Substring(0, Settings.Default.RedmineURL.Length - 1)
-                           : Settings.Default.RedmineURL;
-            }
-        }
-
-        /// <summary>
-        /// Gets the current user name.
-        /// </summary>
-        public string CurrentUserName
-        {
-            get
-            {
-                return this.CurrentUser != null ? this.CurrentUser.Name : string.Empty;
+                return this._projects.Values.ToList();
             }
         }
 
         #endregion
+
+        /// <summary>
+        /// Method to refresh the status of all issues.
+        /// </summary>
+        public void RefreshIssueStatus()
+        {
+            // get all tickets to be updated
+            var ticketsToUpdateTheStatusOf = this._issues.Values.ToList();
+
+            // trigger the status refresh for those tickets
+            DownloadHelper.RefreshIssueStatus(ticketsToUpdateTheStatusOf, this._externalDataSource);
+        }
+
+        /// <summary>
+        /// Method to update the list of watched projects
+        /// </summary>
+        /// <param name="watchedProjects">the watched projects to use</param>
+        public void UpdateWatchedProjects(List<ProjectInfo> watchedProjects)
+        {
+            this.WatchedProjects = watchedProjects;
+            this.UpdateWatchedProjectListInDataSource();
+
+            Settings.Default.WatchedProjects = string.Join(";", this.WatchedProjects.Select(iref => iref.Id));
+            Settings.Default.Save();
+        }
+
+        /// <summary>
+        /// Method to update the watched projects in the datasource used
+        /// </summary>
+        private void UpdateWatchedProjectListInDataSource()
+        {
+            // update the list in the data source
+            if (this._externalDataSource != null)
+            {
+                this._externalDataSource.ProjectsWithWatchedIssueStatus.Clear();
+                this.WatchedProjects.Where(p => p.Id.HasValue).ForEach(p => this._externalDataSource.ProjectsWithWatchedIssueStatus.Add(p.Id.Value));
+            }
+        }
     }
 }

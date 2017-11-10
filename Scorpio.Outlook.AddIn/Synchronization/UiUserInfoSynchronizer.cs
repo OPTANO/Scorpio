@@ -262,6 +262,18 @@ namespace Scorpio.Outlook.AddIn.Synchronization
         }
 
         /// <summary>
+        /// Returns the booked hours within the given start and end date.
+        /// </summary>
+        /// <param name="start">The start date</param>
+        /// <param name="end">The end date</param>
+        /// <returns>The booked hours</returns>
+        public double GetHours(DateTime start, DateTime end)
+        {
+            var appointemnts = this._appointmentsInRangeFunction(start, end);
+            return GetWorkTimeInHours(appointemnts);
+        }
+
+        /// <summary>
         /// Method which is called periodically by the <see cref="_updateTimer"/>. It keeps the display of 
         /// logged hours in the ribbon bar synchronized with the calendar view.
         /// The method checks if the dates displayed have changed, a recalculation of the worked hours in only performed,

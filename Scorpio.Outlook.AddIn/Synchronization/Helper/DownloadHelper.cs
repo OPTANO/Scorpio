@@ -40,6 +40,7 @@ namespace Scorpio.Outlook.AddIn.Synchronization.Helper
     using log4net;
 
     using Scorpio.Outlook.AddIn.Cache;
+    using Scorpio.Outlook.AddIn.Helper;
     using Scorpio.Outlook.AddIn.LocalObjects;
     using Scorpio.Outlook.AddIn.Properties;
     using Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource;
@@ -59,54 +60,6 @@ namespace Scorpio.Outlook.AddIn.Synchronization.Helper
         #endregion
 
         #region Public Methods and Operators
-
-        /// <summary>
-        /// Method to get the list of all activity infos
-        /// </summary>
-        /// <param name="source">the external data source</param>
-        /// <returns>the activities</returns>
-        public static Dictionary<int, ActivityInfo> GetActivityInfos(IExternalSource source)
-        {
-            var parameters = new DataSourceParameter() { UseLimit = false };
-            var activities = source.GetTotalActivityInfoList(parameters).ToDictionary(act => act.Id.Value, act => act);
-            return activities;
-        }
-
-        /// <summary>
-        /// Downloads all redmine projects and update the cache with the new data
-        /// </summary>
-        /// <param name="source">the data source to use</param>
-        /// <returns>The projects that are downloaded from redmine.</returns>
-        public static ProjectLists GetCurrentProjectsAndUpdateCache(IExternalSource source)
-        {
-            if (Globals.ThisAddIn != null)
-            {
-                Globals.ThisAddIn.SyncState.Status = "Lade Projekte...";
-            }
-
-            var parameters = new DataSourceParameter();
-            var projects = source.GetTotalProjectList(
-                parameters,
-                (cur, total) =>
-                {
-                    if (Globals.ThisAddIn != null)
-                    {
-                        Globals.ThisAddIn.SyncState.Status = string.Format("Lade Projekte ({0}/{1})", Math.Min(cur, total), total);
-                    }
-                }).Where(p => p.Id.HasValue).ToDictionary(p => p.Id.Value, p => p);
-
-            // Get the known projects from localcache
-            var knownProjects = LocalCache.ReadObject(LocalCache.KnownProjects, new List<ProjectInfo>()) as List<ProjectInfo> ?? new List<ProjectInfo>();
-
-            // Find those projects which are new 
-            var newProjects = projects.Values.Except(knownProjects).ToList();
-
-            // Write all currently known projects
-            LocalCache.WriteObject(LocalCache.KnownProjects, projects.Values.ToList());
-
-            return new ProjectLists() { AllProjects = projects, NewProjects = newProjects };
-        }
-
 
         /// <summary>
         /// Method to download the issue list from the given source, known issues are read, updated are done, updated list is returned. In case of an exception, an empty list is returned.
@@ -151,6 +104,94 @@ namespace Scorpio.Outlook.AddIn.Synchronization.Helper
             }
 
             return issues;
+        }
+
+        /// <summary>
+        /// Method to get the list of all activity infos
+        /// </summary>
+        /// <param name="source">the external data source</param>
+        /// <returns>the activities</returns>
+        public static Dictionary<int, ActivityInfo> GetActivityInfos(IExternalSource source)
+        {
+            var parameters = new DataSourceParameter() { UseLimit = false };
+            var activities = source.GetTotalActivityInfoList(parameters).ToDictionary(act => act.Id.Value, act => act);
+            return activities;
+        }
+
+        /// <summary>
+        /// Downloads all redmine projects and update the cache with the new data
+        /// </summary>
+        /// <param name="source">the data source to use</param>
+        /// <returns>The projects that are downloaded from redmine.</returns>
+        public static ProjectLists GetCurrentProjectsAndUpdateCache(IExternalSource source)
+        {
+            if (Globals.ThisAddIn != null)
+            {
+                Globals.ThisAddIn.SyncState.Status = "Lade Projekte...";
+            }
+
+            var parameters = new DataSourceParameter();
+            var projects = source.GetTotalProjectList(
+                parameters,
+                (cur, total) =>
+                    {
+                        if (Globals.ThisAddIn != null)
+                        {
+                            Globals.ThisAddIn.SyncState.Status = string.Format("Lade Projekte ({0}/{1})", Math.Min(cur, total), total);
+                        }
+                    }).Where(p => p.Id.HasValue).ToList();
+
+            // Get the known projects from localcache
+            var knownProjects = LocalCache.ReadObject(LocalCache.KnownProjects, new List<ProjectInfo>()) as List<ProjectInfo>
+                                ?? new List<ProjectInfo>();
+
+            // Find those projects which are new 
+            var newProjects = projects.Except(knownProjects).ToList();
+
+            // Write all currently known projects
+            LocalCache.WriteObject(LocalCache.KnownProjects, projects);
+
+            return new ProjectLists() { AllProjects = projects.ToDictionary(p => p.Id.Value, v => v), NewProjects = newProjects };
+        }
+
+        /// <summary>
+        /// Method to load the issues for the given project id
+        /// </summary>
+        /// <param name="newProjectId">the project id to load</param>
+        /// <param name="externalDataSource">the external datasource to use</param>
+        /// <returns>the info object containing projects and issues</returns>
+        public static ProjectAndIssueInfo LoadProjectWithIssues(int newProjectId, IExternalSource externalDataSource)
+        {
+            var projectAndIssueInfo = new ProjectAndIssueInfo();
+
+            // Get the known projects from localcache
+            var knownProjects = LocalCache.ReadObject(LocalCache.KnownProjects, new List<ProjectInfo>()) as List<ProjectInfo>
+                                ?? new List<ProjectInfo>();
+
+            // if we really do not know the project, load it
+            if (!knownProjects.Select(p => p.Id).Contains(newProjectId))
+            {
+                // load all projects and store them
+                var parameters = new DataSourceParameter() { ProjectId = newProjectId };
+                var newlyLoadedProject = externalDataSource.GetTotalProjectList(parameters).Where(p => p.Id.HasValue).FirstOrDefault();
+
+                if (newlyLoadedProject != null)
+                {
+                    // get a list of all now known projects
+                    var allKnownProjects = knownProjects.ToList();
+                    knownProjects.Add(newlyLoadedProject);
+
+                    // Write all currently known projects
+                    LocalCache.WriteObject(LocalCache.KnownProjects, allKnownProjects);
+                    projectAndIssueInfo.Projects.Add(newlyLoadedProject);
+
+                    // load the issues of the new projects
+                    var allIssuesOfNewProjects = DownloadAllIssuesForNewProjects(new List<ProjectInfo>() { newlyLoadedProject }, externalDataSource);
+                    projectAndIssueInfo.Issues.AddRange(allIssuesOfNewProjects.Values);
+                }
+            }
+            
+            return projectAndIssueInfo;
         }
 
         /// <summary>
@@ -210,7 +251,7 @@ namespace Scorpio.Outlook.AddIn.Synchronization.Helper
             // convert the hash set to a dictionary
             var resultDictionary = new Dictionary<int, IssueInfo>();
             allIssuesForNewProjects.Where(i => i.Id.HasValue).ForEach(i => resultDictionary[i.Id.Value] = i);
-            
+
             return resultDictionary;
         }
 
@@ -224,19 +265,18 @@ namespace Scorpio.Outlook.AddIn.Synchronization.Helper
         {
             // get parameter and action
             var parameters = new DataSourceParameter() { ProjectId = project.Id, StatusId = -1 };
-            Action<int, int> action =
-                (i, overall) =>
+            Action<int, int> action = (i, overall) =>
+                {
+                    if (Globals.ThisAddIn == null)
                     {
-                        if (Globals.ThisAddIn == null)
-                        {
-                            return;
-                        }
-                        Globals.ThisAddIn.SyncState.Status = string.Format(
-                            "Lade Issues für neues Projekt {0} ({1}/{2})",
-                            project.Name,
-                            Math.Min(i, overall),
-                            overall);
-                    };
+                        return;
+                    }
+                    Globals.ThisAddIn.SyncState.Status = string.Format(
+                        "Lade Issues für neues Projekt {0} ({1}/{2})",
+                        project.Name,
+                        Math.Min(i, overall),
+                        overall);
+                };
             try
             {
                 // load data and add the issues. Note that we load all issues here
@@ -287,7 +327,7 @@ namespace Scorpio.Outlook.AddIn.Synchronization.Helper
             // get download parameter
             var issuesKnown = knownIssueList.Any();
             var parameters = GetDataSourceParameterForDownloadOfIssues(issuesKnown);
-            if(Globals.ThisAddIn != null)
+            if (Globals.ThisAddIn != null)
             {
                 Globals.ThisAddIn.SyncState.Status = "Lade neue Issues";
             }
@@ -330,5 +370,46 @@ namespace Scorpio.Outlook.AddIn.Synchronization.Helper
             public List<ProjectInfo> NewProjects { get; set; }
         }
 
+        /// <summary>
+        /// Method to refresh the status of the given issues
+        /// </summary>
+        /// <param name="issuesToUpdateTheStatusOf">the issues to be updated</param>
+        /// <param name="externalDataSource">the external data source to use</param>
+        public static void RefreshIssueStatus(List<IssueInfo> issuesToUpdateTheStatusOf, IExternalSource externalDataSource)
+        {
+            var ticketsGroupedByProject = issuesToUpdateTheStatusOf.GroupBy(g => g.ProjectId);
+            var watchedProjects = externalDataSource.ProjectsWithWatchedIssueStatus;
+
+            foreach (var projectGroup in ticketsGroupedByProject)
+            {
+                // init
+                var projectId = projectGroup.Key;
+                var issues = projectGroup.ToDictionary(k => k.Id, v => v);
+                var projectWatched = watchedProjects.Contains(projectId);
+                var idsOfOpenIssues = new List<int?>();
+
+                if (projectWatched)
+                {
+                    // load all issues for the project and update their status if we know the issue
+                    // if the project filter is set, the api only returns the open tickets
+                    var parameter = new DataSourceParameter() { ProjectId = projectId };
+                    idsOfOpenIssues = externalDataSource.GetIssueInfoList(parameter).Select(i => i.Id).ToList();
+                }
+
+                foreach (var issue in issues)
+                {
+                    if (projectWatched)
+                    {
+                        // if the project is watched, the status is open, if the ticket is contained in the list of issues returned, closed else
+                        issue.Value.HasOpenStatus = idsOfOpenIssues.Contains(issue.Key);
+                    }
+                    else
+                    {
+                        // if the project should bnot be watched, the status is set to unknown
+                        issue.Value.HasOpenStatus = null;
+                    }
+                }
+            }
+        }
     }
 }

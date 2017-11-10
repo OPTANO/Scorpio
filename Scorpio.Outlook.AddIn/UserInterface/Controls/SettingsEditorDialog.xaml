@@ -11,7 +11,7 @@
              xmlns:XtraEditors="clr-namespace:DevExpress.XtraEditors;assembly=DevExpress.XtraEditors.v15.1"
              x:Class="Scorpio.Outlook.AddIn.UserInterface.Controls.SettingsEditorDialog"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance {x:Type local:SettingsEditorDialog}, IsDesignTimeCreatable=False}"
-             d:DesignHeight="400" d:DesignWidth="400" dx:ThemeManager.ThemeName="Office2013" Height="680" Width="600" Title="Einstellungen">
+             d:DesignHeight="720" d:DesignWidth="700" dx:ThemeManager.ThemeName="Office2013" Height="720" Width="700" Title="Einstellungen">
 
     <!--<dxlc:LayoutControl Orientation="Vertical" VerticalAlignment="Stretch">
         <dxlc:LayoutGroup View="Tabs" SelectedTabIndex="0" HorizontalAlignment="Stretch">
@@ -63,15 +63,16 @@
                         </GroupBox>
             <Button Click="ClearIssueCache_OnClick" HorizontalContentAlignment="Right" HorizontalAlignment="Right" Margin="0,5,12,5" Content="Issuecache leeren"/>
         </StackPanel>
-                  
-                    <StackPanel Orientation="Vertical">
+        <StackPanel Orientation="Horizontal">
+        <GroupBox Header="Favoriten Tickets" Margin="2">
+            <StackPanel Orientation="Vertical">
 
-                        <Grid Margin="0,5,0,5">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"></ColumnDefinition>
-                                <ColumnDefinition Width="Auto"></ColumnDefinition>
-                            </Grid.ColumnDefinitions>
-                            <dxg:LookUpEdit
+            <Grid Margin="0,5,0,5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                    <ColumnDefinition Width="Auto"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                    <dxg:LookUpEdit
                                 FilterCondition = "Contains"
                                 FindButtonPlacement = "None"
                                 NullValueButtonPlacement = "None"
@@ -82,34 +83,34 @@
                                 EditValue="{Binding SelectedIssue}"
                                 AutoPopulateColumns="False"
                                 DisplayMember="DisplayValue">
-                                <dxg:LookUpEdit.StyleSettings>
-                                    <dxg:SearchLookUpEditStyleSettings />
-                                </dxg:LookUpEdit.StyleSettings>
-                                <dxg:LookUpEdit.PopupContentTemplate>
-                        <ControlTemplate>
-                            <dxg:GridControl AutoExpandAllGroups="True" Name="PART_GridControl" d:DataContext="{d:DesignInstance d:Type={x:Type LocalObjects:IssueInfo}}">
-                                <dxg:GridControl.Columns>
-                                    <dxg:GridColumn Header="Projekt" Binding="{Binding ProjectShortName}" GroupIndex="0"/>
-                                    <dxg:GridColumn Header="Issue Nr" Binding="{Binding Id}" />
-                                    <dxg:GridColumn Header="Name" Binding="{Binding Name}" />
-                                            </dxg:GridControl.Columns>
-                                            <dxg:GridControl.View>
-                                                <dxg:TableView
+                        <dxg:LookUpEdit.StyleSettings>
+                            <dxg:SearchLookUpEditStyleSettings />
+                        </dxg:LookUpEdit.StyleSettings>
+                        <dxg:LookUpEdit.PopupContentTemplate>
+                            <ControlTemplate>
+                                <dxg:GridControl AutoExpandAllGroups="True" Name="PART_GridControl" d:DataContext="{d:DesignInstance d:Type={x:Type LocalObjects:IssueInfo}}">
+                                    <dxg:GridControl.Columns>
+                                        <dxg:GridColumn Header="Projekt" Binding="{Binding ProjectShortName}" GroupIndex="0"/>
+                                        <dxg:GridColumn Header="Issue Nr" Binding="{Binding Id}" />
+                                        <dxg:GridColumn Header="Name" Binding="{Binding Name}" />
+                                    </dxg:GridControl.Columns>
+                                    <dxg:GridControl.View>
+                                        <dxg:TableView
                                                     AutoWidth="True"
                                                     AllowPerPixelScrolling="True"
                                                     ScrollAnimationDuration="0"
                                                     ShowTotalSummary="False"
                                                     IsSynchronizedWithCurrentItem="True"
                                                 >
-                                                </dxg:TableView>
-                                            </dxg:GridControl.View>
-                                        </dxg:GridControl>
-                                    </ControlTemplate>
-                                </dxg:LookUpEdit.PopupContentTemplate>
-                            </dxg:LookUpEdit>
-                            <Button Grid.Column="1" Click="AddFavorite_OnClick">+</Button>
-                        </Grid>
-                        <dxg:GridControl AutoExpandAllGroups="True" MinHeight="300" MaxHeight="500" VerticalAlignment="Stretch" ItemsSource="{Binding FavoriteIssues}">
+                                        </dxg:TableView>
+                                    </dxg:GridControl.View>
+                                </dxg:GridControl>
+                            </ControlTemplate>
+                        </dxg:LookUpEdit.PopupContentTemplate>
+                    </dxg:LookUpEdit>
+                    <Button Grid.Column="1" Click="AddFavorite_OnClick">+</Button>
+            </Grid>
+            <dxg:GridControl AutoExpandAllGroups="True" MinHeight="300" MaxHeight="450" VerticalAlignment="Stretch" ItemsSource="{Binding FavoriteIssues}" >
                             <dxg:GridControl.Columns>
                                  <dxg:GridColumn Width="60"  Header="Projekt" Binding="{Binding ProjectShortName}" />
                                  <dxg:GridColumn Width="60"  Header="Issue Nr" Binding="{Binding Id}" />
@@ -135,6 +136,77 @@
                             </dxg:GridControl.View>
                         </dxg:GridControl>
                     </StackPanel>
+        </GroupBox>
+        <GroupBox Header="Projekte, deren Status geladen werden soll" Margin="2">
+            <StackPanel Orientation="Vertical">
+
+                <Grid Margin="0,5,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"></ColumnDefinition>
+                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <dxg:LookUpEdit
+                                FilterCondition = "Contains"
+                                FindButtonPlacement = "None"
+                                NullValueButtonPlacement = "None"
+                                AddNewButtonPlacement = "None"
+                                FindMode = "Always"
+                                ShowSizeGrip = "True"
+                                ItemsSource="{Binding AvailableProjects}"
+                                EditValue="{Binding SelectedProject}"
+                                AutoPopulateColumns="False"
+                                DisplayMember="Name">
+                        <dxg:LookUpEdit.StyleSettings>
+                            <dxg:SearchLookUpEditStyleSettings />
+                        </dxg:LookUpEdit.StyleSettings>
+                        <dxg:LookUpEdit.PopupContentTemplate>
+                            <ControlTemplate>
+                                <dxg:GridControl AutoExpandAllGroups="True" Name="PART_GridControl" d:DataContext="{d:DesignInstance d:Type={x:Type LocalObjects:ProjectInfo}}">
+                                    <dxg:GridControl.Columns>
+                                        <dxg:GridColumn Header="Name" Binding="{Binding Name}" SortIndex="0"/>
+                                    </dxg:GridControl.Columns>
+                                    <dxg:GridControl.View>
+                                        <dxg:TableView
+                                                    AutoWidth="True"
+                                                    AllowPerPixelScrolling="True"
+                                                    ScrollAnimationDuration="0"
+                                                    ShowTotalSummary="False"
+                                                    IsSynchronizedWithCurrentItem="True"
+                                                >
+                                        </dxg:TableView>
+                                    </dxg:GridControl.View>
+                                </dxg:GridControl>
+                            </ControlTemplate>
+                        </dxg:LookUpEdit.PopupContentTemplate>
+                    </dxg:LookUpEdit>
+                    <Button Grid.Column="1" Click="AddWatched_OnClick">+</Button>
+                </Grid>
+                <dxg:GridControl AutoExpandAllGroups="True" MinHeight="300" MaxHeight="450" VerticalAlignment="Stretch" ItemsSource="{Binding WatchedProjects}">
+                    <dxg:GridControl.Columns>
+                        <dxg:GridColumn Width="240" Header="Name" Binding="{Binding Name}" />
+                        <dxg:GridColumn FixedWidth="True" Width="40" Header=" ">
+                            <dxg:GridColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Command="{Binding View.DataContext.RemoveWatchedCommand}" CommandParameter="{Binding RowData.Row}">X</Button>
+                                </DataTemplate>
+                            </dxg:GridColumn.CellTemplate>
+                        </dxg:GridColumn>
+                    </dxg:GridControl.Columns>
+                    <dxg:GridControl.View>
+                        <dxg:TableView
+                                    AllowGrouping="False"
+                                    AutoWidth="True"
+                                    AllowBestFit="True"
+                                    AllowPerPixelScrolling="True"
+                                    ScrollAnimationDuration="0"
+                                    ShowTotalSummary="False"
+                                    IsSynchronizedWithCurrentItem="True" ShowGroupPanel="False">
+                        </dxg:TableView>
+                    </dxg:GridControl.View>
+                </dxg:GridControl>
+            </StackPanel>
+        </GroupBox>
+        </StackPanel>
         <WrapPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0" >
             <Button Click="Ok_OnClick" Margin="0,0,5,0">Ok</Button>
             <Button Click="Cancel_OnClick">Abbrechen</Button>

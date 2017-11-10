@@ -192,7 +192,10 @@ namespace Scorpio.Outlook.AddIn.Cache
                 // could not be initialized. This happens, e.g., when the application was not installed 
                 // from the network drive, or the application was started in debug mode from VS.
 
-                Log.Info("Could not initialize application scoped isolated storage file. Falling back to assembly scoped isolated storage file.", ex);
+                // In Debug mode this is normal, so skip logging to prevent spam :)
+#if !DEBUG
+                Log.Info("Could not initialize application scoped isolated storage file. Falling back to assembly scoped isolated storage file.", ex);        
+#endif
                 return IsolatedStorageFile.GetUserStoreForAssembly();
             }
         }

@@ -41,7 +41,7 @@
     <PublishUrl>\\orcserv01\Daten\Software\SCORPIO Release\</PublishUrl>
     <InstallUrl>\\orcserv01\Daten\Software\SCORPIO Release\</InstallUrl>
     <TargetCulture>de</TargetCulture>
-    <ApplicationVersion>1.4.2.1</ApplicationVersion>
+    <ApplicationVersion>1.5.0.2</ApplicationVersion>
     <AutoIncrementApplicationRevision>true</AutoIncrementApplicationRevision>
     <UpdateEnabled>true</UpdateEnabled>
     <UpdateInterval>0</UpdateInterval>
@@ -383,6 +383,8 @@
       <DependentUpon>AppointmentRedmineRegion.cs</DependentUpon>
     </Compile>
     <Compile Include="Extensions\StringExtensions.cs" />
+    <Compile Include="Helper\ProjectAndIssueInfo.cs" />
+    <Compile Include="Helper\ProjectLists.cs" />
     <Compile Include="LocalObjects\AbstractInfoBase.cs" />
     <Compile Include="LocalObjects\ActivityInfo.cs" />
     <Compile Include="Extensions\AppointmentExtensions.cs" />
@@ -441,11 +443,16 @@
     <Compile Include="UserInterface\RibbonBars\ScorpioRibbonAppointment.cs" />
     <Compile Include="UserInterface\RibbonBars\ScorpioRibbonExplorer.cs" />
     <Compile Include="UserInterface\ViewModel\ScorpioTaskPaneViewModel.cs" />
+    <Compile Include="UserInterface\ViewModel\ShowTimeEntriesViewModel.cs" />
+    <Compile Include="Misc\ViewModelBase.cs" />
     <Compile Include="UserInterface\View\QuickAccess.xaml.cs">
       <DependentUpon>QuickAccess.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInterface\View\ScorpioTaskPane.xaml.cs">
       <DependentUpon>ScorpioTaskPane.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserInterface\View\ShowTimeEntries.xaml.cs">
+      <DependentUpon>ShowTimeEntries.xaml</DependentUpon>
     </Compile>
     <EmbeddedResource Include="AppointmentRedmineRegion.resx">
       <DependentUpon>AppointmentRedmineRegion.cs</DependentUpon>
@@ -483,6 +490,7 @@
     <Compile Include="ThisAddIn.cs">
       <SubType>Code</SubType>
     </Compile>
+    <None Include="Scorpio.Outlook.AddIn_1_TemporaryKey.pfx" />
     <None Include="Scorpio.Outlook.AddIn_TemporaryKey.pfx" />
     <None Include="ThisAddIn.Designer.xml">
       <DependentUpon>ThisAddIn.cs</DependentUpon>
@@ -524,6 +532,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="UserInterface\View\ShowTimeEntries.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\application_side_expand.png" />
@@ -554,6 +566,12 @@
     <Resource Include="Resources\outlook_calendar_day.png" />
     <Resource Include="Resources\outlook_calendar_month.png" />
     <Resource Include="Resources\outlook_calendar_week.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\refresh_ticket_status.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\refresh_all.png" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

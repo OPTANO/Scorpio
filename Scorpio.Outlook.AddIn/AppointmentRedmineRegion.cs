@@ -41,7 +41,10 @@ namespace Scorpio.Outlook.AddIn
 
     using DevExpress.Data.Filtering;
     using DevExpress.Mvvm.POCO;
+    using DevExpress.Utils.Win;
     using DevExpress.XtraEditors;
+    using DevExpress.XtraLayout;
+    using DevExpress.XtraLayout.Utils;
 
     using log4net;
 
@@ -112,7 +115,7 @@ namespace Scorpio.Outlook.AddIn
 
                 this.issueList = new ObservableCollection<IssueInfo>(Globals.ThisAddIn.Synchronizer.AllIssues.Values);
                 this.issueProjectInfoBindingSource.DataSource = this.issueList;
-                this.lastUsedIssuesBindingSource.DataSource = Globals.ThisAddIn.Synchronizer.LastUsedIssues;
+                this.lastUsedIssuesBindingSource.DataSource = Globals.ThisAddIn.Synchronizer.LastUsedIssues; 
                 this.favoriteIssuesBindingSource.DataSource = Globals.ThisAddIn.Synchronizer.FavoriteIssues;
                 this.UpdateUi();
             }
@@ -389,6 +392,18 @@ namespace Scorpio.Outlook.AddIn
                         // we do not have to cancel, because the item is being created in the redmine calendar.
                         return;
                     }
+                    else if (string.IsNullOrEmpty(parent.EntryID))
+                    {
+                        Log.Info("Redmine Region will not be shown, because parent.EntryID is empty");   
+                    }
+                    else if (string.IsNullOrEmpty(Globals.ThisAddIn.RedmineCalendar.EntryID))
+                    {
+                        Log.Info("Redmine Region will not be shown, because RedmineCalendar.EntryID is empty");
+                    }
+                }
+                else
+                {
+                    Log.Info("Redmine Region will not be shown, because the OutlookItem is null.");
                 }
 
                 // The item is not in the redmine calendar, thus cancel showing the form region.
@@ -396,6 +411,34 @@ namespace Scorpio.Outlook.AddIn
             }
 
             #endregion
+        }
+
+        /// <summary>
+        /// Method to search in the last used issues list.
+        /// </summary>
+        /// <param name="sender">the event sender</param>
+        /// <param name="e">the event</param>
+        private void searchLastIssues_TextChanged(object sender, EventArgs e)
+        {
+            this.lastUsedIssuesBindingSource.DataSource = Globals.ThisAddIn.Synchronizer.LastUsedIssues.Where(i => i.DisplayValue.ContainsAllWords(this.searchLastIssues.Text));
+        }
+
+        /// <summary>
+        /// Method handles Popup Event from the isse Selector to hide the clear Button.
+        /// </summary>
+        /// <param name="sender">The sender</param>
+        /// <param name="e">The event args</param>
+        private void issueSelector_Popup(object sender, EventArgs e)
+        {
+            // Simple:
+            // this.issueSelector.Properties.View.OptionsFind.ShowClearButton = false;
+            // Would be too easy....
+            // Offical solution to hide a Button: 
+            // https://www.devexpress.com/Support/Center/Question/Details/Q393620/gridlookupedit-popupfind-hide-find-button
+            // o.O
+            LayoutControl lc = (sender as IPopupControl).PopupWindow.Controls[2].Controls[0] as LayoutControl;
+            ((lc.Items[0] as LayoutControlGroup).Items[2] as LayoutControlGroup).Items[0].Visibility = DevExpress.XtraLayout.Utils.LayoutVisibility.Never;
+            
         }
         
     }

@@ -42,7 +42,7 @@ namespace Scorpio.Outlook.AddIn.UserInterface.ViewModel
     /// <summary>
     /// View model for the custom task pane.
     /// </summary>
-    public class ScorpioTaskPaneViewModel : INotifyPropertyChanged
+    public class ScorpioTaskPaneViewModel : ViewModelBase
     {
         #region Fields
 
@@ -158,12 +158,7 @@ namespace Scorpio.Outlook.AddIn.UserInterface.ViewModel
             }
             set
             {
-                if (this._connectString == value)
-                {
-                    return;
-                }
-                this._connectString = value;
-                this.OnPropertyChanged("ConnectString");
+                this.SetProperty(ref this._connectString, value);
             }
         }
 
@@ -178,12 +173,7 @@ namespace Scorpio.Outlook.AddIn.UserInterface.ViewModel
             }
             set
             {
-                if (Math.Abs(this._hoursCalendar - value) < Constants.Epsilon)
-                {
-                    return;
-                }
-                this._hoursCalendar = value;
-                this.OnPropertyChanged("HoursCalendar");
+                this.SetProperty(ref this._hoursCalendar, value);
             }
         }
 
@@ -198,12 +188,7 @@ namespace Scorpio.Outlook.AddIn.UserInterface.ViewModel
             }
             set
             {
-                if (Math.Abs(this._hoursDay - value) < Constants.Epsilon)
-                {
-                    return;
-                }
-                this._hoursDay = value;
-                this.OnPropertyChanged("HoursDay");
+                this.SetProperty(ref this._hoursDay, value);
             }
         }
 
@@ -218,12 +203,7 @@ namespace Scorpio.Outlook.AddIn.UserInterface.ViewModel
             }
             set
             {
-                if (Math.Abs(this._hoursWeek - value) < Constants.Epsilon)
-                {
-                    return;
-                }
-                this._hoursWeek = value;
-                this.OnPropertyChanged("HoursWeek");
+                this.SetProperty(ref this._hoursWeek, value);
             }
         }
 
@@ -238,12 +218,7 @@ namespace Scorpio.Outlook.AddIn.UserInterface.ViewModel
             }
             set
             {
-                if (Math.Abs(this._hoursMonth - value) < Constants.Epsilon)
-                {
-                    return;
-                }
-                this._hoursMonth = value;
-                this.OnPropertyChanged("HoursMonth");
+                this.SetProperty(ref this._hoursMonth, value);
             }
         }
 

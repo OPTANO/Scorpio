@@ -35,8 +35,12 @@ namespace Scorpio.Outlook.AddIn.UserInterface.RibbonBars
     using System.Deployment.Application;
     using System.Drawing;
     using System.Threading.Tasks;
+    using System.Windows;
 
     using Microsoft.Office.Core;
+
+    using Scorpio.Outlook.AddIn.UserInterface.View;
+    using Scorpio.Outlook.AddIn.UserInterface.ViewModel;
 
     /// <summary>
     /// Partial class for the scorpio ribbon
@@ -60,10 +64,9 @@ namespace Scorpio.Outlook.AddIn.UserInterface.RibbonBars
             {
                 return Globals.ThisAddIn.Synchronizer.CanSyncTimeEntries && Globals.ThisAddIn.CalendarState.CalendarView != null;
             }
-            if (control.Id == "createreport")
+            if (control.Id == "updateTicketStatus")
             {
-                // TODO DS: reenable later. Used to be the same as for resetTimeEntries and saveTimeEntries.
-                return false;
+                return Globals.ThisAddIn.Synchronizer.CanSyncTimeEntries;
             }
             return false;
         }
@@ -93,27 +96,24 @@ namespace Scorpio.Outlook.AddIn.UserInterface.RibbonBars
             {
                 case "saveTimeEntries":
                     return Properties.Resources.diskette;
-
                 case "resetTimeEntries":
                     return Properties.Resources.arrow_undo;
-
                 case "showCalendar":
                     return Properties.Resources.calendar;
-
                 case "connectRedmine":
                     return Properties.Resources.arrow_refresh;
-
                 case "showSettings":
                     return Properties.Resources.setting_tools;
-
-                case "createreport":
-                    return Properties.Resources.report_user;
+                case "updateTicketStatus":
+                    return Properties.Resources.refresh_all;
                 case "showTaskPane":
                     return Properties.Resources.application_side_expand;
                 case "createSingle":
                     return Properties.Resources.date_add;
                 case "createRecurring":
                     return Properties.Resources.date_relation;
+                case "showHours":
+                    return Properties.Resources.report_user;
             }
             return null;
         }
@@ -191,13 +191,12 @@ namespace Scorpio.Outlook.AddIn.UserInterface.RibbonBars
         }
 
         /// <summary>
-        /// Called when the user presses the button for creating the monthly report of work time.
+        /// Called when the user presses the button for updating the ticket status
         /// </summary>
         /// <param name="control">The control which was pressed.</param>
-        public void OnReport(IRibbonControl control)
+        public void OnIssueStatus(IRibbonControl control)
         {
-            // TODO Datum des aktuell gewählten Tag
-            Globals.ThisAddIn.CalculateMonthlyReport();
+            Globals.ThisAddIn.RefreshIssueStatus();
         }
 
         /// <summary>
@@ -239,6 +238,18 @@ namespace Scorpio.Outlook.AddIn.UserInterface.RibbonBars
         }
 
         /// <summary>
+        /// Called when the user presses the button for showing the sho time entries dialog.
+        /// </summary>
+        /// <param name="control">The control which was pressed.</param>
+        public void OnShowHours(IRibbonControl control)
+        {
+            var dialog = new ShowTimeEntries();
+            dialog.DataContext = new ShowTimeEntriesViewModel();
+            dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            dialog.ShowDialog();
+        }
+
+        /// <summary>
         /// Called when the user presses the button for showing the task pane.
         /// </summary>
         /// <param name="control">The control which was pressed.</param>
@@ -259,7 +270,7 @@ namespace Scorpio.Outlook.AddIn.UserInterface.RibbonBars
             this.ribbon.InvalidateControl("connectRedmine");
             this.ribbon.InvalidateControl("saveTimeEntries");
             this.ribbon.InvalidateControl("resetTimeEntries");
-            this.ribbon.InvalidateControl("createreport");
+            this.ribbon.InvalidateControl("updateTicketStatus");
         }
 
         /// <summary>

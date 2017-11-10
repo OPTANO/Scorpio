@@ -41,7 +41,9 @@
         {
             this.components = new System.ComponentModel.Container();
             this.layoutControl1 = new DevExpress.XtraLayout.LayoutControl();
+            this.searchLastIssues = new System.Windows.Forms.TextBox();
             this.lstFavorite = new DevExpress.XtraEditors.ListBoxControl();
+            this.favoriteIssuesBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.lstLastUsed = new DevExpress.XtraEditors.ListBoxControl();
             this.lastUsedIssuesBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.issueSelector = new DevExpress.XtraEditors.SearchLookUpEdit();
@@ -51,18 +53,19 @@
             this.colIssueName = new DevExpress.XtraGrid.Columns.GridColumn();
             this.colProjectName = new DevExpress.XtraGrid.Columns.GridColumn();
             this.colIssueId = new DevExpress.XtraGrid.Columns.GridColumn();
+            this.colIssueStatus = new DevExpress.XtraGrid.Columns.GridColumn();
             this.lnkIssue = new System.Windows.Forms.LinkLabel();
             this.lnkProject = new System.Windows.Forms.LinkLabel();
             this.layoutControlGroup1 = new DevExpress.XtraLayout.LayoutControlGroup();
             this.layoutControlGroup2 = new DevExpress.XtraLayout.LayoutControlGroup();
             this.layoutControlItem2 = new DevExpress.XtraLayout.LayoutControlItem();
+            this.layoutControlItem7 = new DevExpress.XtraLayout.LayoutControlItem();
             this.layoutControlGroup3 = new DevExpress.XtraLayout.LayoutControlGroup();
             this.layoutControlItem1 = new DevExpress.XtraLayout.LayoutControlItem();
             this.layoutControlItem6 = new DevExpress.XtraLayout.LayoutControlItem();
             this.layoutControlItem3 = new DevExpress.XtraLayout.LayoutControlItem();
             this.layoutControlGroup4 = new DevExpress.XtraLayout.LayoutControlGroup();
             this.layoutControlItem4 = new DevExpress.XtraLayout.LayoutControlItem();
-            this.favoriteIssuesBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.defaultLookAndFeel1 = new DevExpress.LookAndFeel.DefaultLookAndFeel(this.components);
             this.assignedToMeSource = new System.Windows.Forms.BindingSource(this.components);
             this.layoutControlItem5 = new DevExpress.XtraLayout.LayoutControlItem();
@@ -70,6 +73,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.layoutControl1)).BeginInit();
             this.layoutControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.lstFavorite)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.favoriteIssuesBindingSource)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.lstLastUsed)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.lastUsedIssuesBindingSource)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.issueSelector.Properties)).BeginInit();
@@ -78,13 +82,13 @@
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlGroup1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlGroup2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlItem2)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.layoutControlItem7)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlGroup3)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlItem1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlItem6)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlItem3)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlGroup4)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlItem4)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.favoriteIssuesBindingSource)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.assignedToMeSource)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlItem5)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.assignedToMeIssuesBinding)).BeginInit();
@@ -93,6 +97,7 @@
             // layoutControl1
             // 
             this.layoutControl1.AllowCustomization = false;
+            this.layoutControl1.Controls.Add(this.searchLastIssues);
             this.layoutControl1.Controls.Add(this.lstFavorite);
             this.layoutControl1.Controls.Add(this.lstLastUsed);
             this.layoutControl1.Controls.Add(this.issueSelector);
@@ -101,11 +106,19 @@
             this.layoutControl1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.layoutControl1.Location = new System.Drawing.Point(0, 0);
             this.layoutControl1.Name = "layoutControl1";
-            this.layoutControl1.OptionsCustomizationForm.DesignTimeCustomizationFormPositionAndSize = new System.Drawing.Rectangle(872, 252, 522, 350);
+            this.layoutControl1.OptionsCustomizationForm.DesignTimeCustomizationFormPositionAndSize = new System.Drawing.Rectangle(872, 252, 831, 458);
             this.layoutControl1.Root = this.layoutControlGroup1;
             this.layoutControl1.Size = new System.Drawing.Size(662, 177);
             this.layoutControl1.TabIndex = 0;
             this.layoutControl1.Text = "layoutControl1";
+            // 
+            // searchLastIssues
+            // 
+            this.searchLastIssues.Location = new System.Drawing.Point(336, 43);
+            this.searchLastIssues.Name = "searchLastIssues";
+            this.searchLastIssues.Size = new System.Drawing.Size(93, 20);
+            this.searchLastIssues.TabIndex = 14;
+            this.searchLastIssues.TextChanged += new System.EventHandler(this.searchLastIssues_TextChanged);
             // 
             // lstFavorite
             // 
@@ -120,13 +133,17 @@
             this.lstFavorite.ValueMember = "Id";
             this.lstFavorite.SelectedIndexChanged += new System.EventHandler(this.LstFavorite_SelectedValueChanged);
             // 
+            // favoriteIssuesBindingSource
+            // 
+            this.favoriteIssuesBindingSource.AllowNew = false;
+            // 
             // lstLastUsed
             // 
             this.lstLastUsed.DataSource = this.lastUsedIssuesBindingSource;
             this.lstLastUsed.DisplayMember = "DisplayValue";
-            this.lstLastUsed.Location = new System.Drawing.Point(253, 43);
+            this.lstLastUsed.Location = new System.Drawing.Point(253, 67);
             this.lstLastUsed.Name = "lstLastUsed";
-            this.lstLastUsed.Size = new System.Drawing.Size(176, 110);
+            this.lstLastUsed.Size = new System.Drawing.Size(176, 86);
             this.lstLastUsed.StyleController = this.layoutControl1;
             this.lstLastUsed.TabIndex = 12;
             this.lstLastUsed.ValueMember = "Id";
@@ -149,6 +166,7 @@
             this.issueSelector.Size = new System.Drawing.Size(118, 20);
             this.issueSelector.StyleController = this.layoutControl1;
             this.issueSelector.TabIndex = 11;
+            this.issueSelector.Popup += new System.EventHandler(this.issueSelector_Popup);
             this.issueSelector.EditValueChanged += new System.EventHandler(this.IssueSelector_EditValueChanged);
             // 
             // issueProjectInfoBindingSource
@@ -161,7 +179,8 @@
             this.colIssueString,
             this.colIssueName,
             this.colProjectName,
-            this.colIssueId});
+            this.colIssueId,
+            this.colIssueStatus});
             this.searchLookUpEdit1View.FocusRectStyle = DevExpress.XtraGrid.Views.Grid.DrawFocusRectStyle.RowFocus;
             this.searchLookUpEdit1View.GroupCount = 1;
             this.searchLookUpEdit1View.Name = "searchLookUpEdit1View";
@@ -171,7 +190,8 @@
             this.searchLookUpEdit1View.OptionsView.ShowAutoFilterRow = true;
             this.searchLookUpEdit1View.OptionsView.ShowGroupPanel = false;
             this.searchLookUpEdit1View.SortInfo.AddRange(new DevExpress.XtraGrid.Columns.GridColumnSortInfo[] {
-            new DevExpress.XtraGrid.Columns.GridColumnSortInfo(this.colProjectName, DevExpress.Data.ColumnSortOrder.Ascending)});
+            new DevExpress.XtraGrid.Columns.GridColumnSortInfo(this.colProjectName, DevExpress.Data.ColumnSortOrder.Ascending),
+            new DevExpress.XtraGrid.Columns.GridColumnSortInfo(this.colIssueStatus, DevExpress.Data.ColumnSortOrder.Descending)});
             // 
             // colIssueString
             // 
@@ -203,6 +223,15 @@
             // 
             this.colIssueId.FieldName = "IssueId";
             this.colIssueId.Name = "colIssueId";
+            // 
+            // colIssueStatus
+            // 
+            this.colIssueStatus.Caption = "Status";
+            this.colIssueStatus.FieldName = "StatusString";
+            this.colIssueStatus.FilterMode = DevExpress.XtraGrid.ColumnFilterMode.DisplayText;
+            this.colIssueStatus.Name = "colIssueStatus";
+            this.colIssueStatus.Visible = true;
+            this.colIssueStatus.VisibleIndex = 2;
             // 
             // lnkIssue
             // 
@@ -240,7 +269,8 @@
             // layoutControlGroup2
             // 
             this.layoutControlGroup2.Items.AddRange(new DevExpress.XtraLayout.BaseLayoutItem[] {
-            this.layoutControlItem2});
+            this.layoutControlItem2,
+            this.layoutControlItem7});
             this.layoutControlGroup2.Location = new System.Drawing.Point(229, 0);
             this.layoutControlGroup2.Name = "layoutControlGroup2";
             this.layoutControlGroup2.Size = new System.Drawing.Size(204, 157);
@@ -249,12 +279,21 @@
             // layoutControlItem2
             // 
             this.layoutControlItem2.Control = this.lstLastUsed;
-            this.layoutControlItem2.Location = new System.Drawing.Point(0, 0);
+            this.layoutControlItem2.Location = new System.Drawing.Point(0, 24);
             this.layoutControlItem2.Name = "layoutControlItem2";
-            this.layoutControlItem2.Size = new System.Drawing.Size(180, 114);
+            this.layoutControlItem2.Size = new System.Drawing.Size(180, 90);
             this.layoutControlItem2.TextLocation = DevExpress.Utils.Locations.Top;
             this.layoutControlItem2.TextSize = new System.Drawing.Size(0, 0);
             this.layoutControlItem2.TextVisible = false;
+            // 
+            // layoutControlItem7
+            // 
+            this.layoutControlItem7.Control = this.searchLastIssues;
+            this.layoutControlItem7.Location = new System.Drawing.Point(0, 0);
+            this.layoutControlItem7.Name = "layoutControlItem7";
+            this.layoutControlItem7.Size = new System.Drawing.Size(180, 24);
+            this.layoutControlItem7.Text = "Suchen:";
+            this.layoutControlItem7.TextSize = new System.Drawing.Size(80, 13);
             // 
             // layoutControlGroup3
             // 
@@ -314,10 +353,6 @@
             this.layoutControlItem4.TextSize = new System.Drawing.Size(0, 0);
             this.layoutControlItem4.TextVisible = false;
             // 
-            // favoriteIssuesBindingSource
-            // 
-            this.favoriteIssuesBindingSource.AllowNew = false;
-            // 
             // defaultLookAndFeel1
             // 
             this.defaultLookAndFeel1.LookAndFeel.SkinName = "Office 2013 Dark Gray";
@@ -341,6 +376,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.layoutControl1)).EndInit();
             this.layoutControl1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.lstFavorite)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.favoriteIssuesBindingSource)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.lstLastUsed)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.lastUsedIssuesBindingSource)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.issueSelector.Properties)).EndInit();
@@ -349,13 +385,13 @@
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlGroup1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlGroup2)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlItem2)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.layoutControlItem7)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlGroup3)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlItem1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlItem6)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlItem3)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlGroup4)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlItem4)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.favoriteIssuesBindingSource)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.assignedToMeSource)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.layoutControlItem5)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.assignedToMeIssuesBinding)).EndInit();
@@ -408,6 +444,9 @@
         private System.Windows.Forms.BindingSource assignedToMeSource;
         private DevExpress.XtraLayout.LayoutControlItem layoutControlItem5;
         private System.Windows.Forms.BindingSource assignedToMeIssuesBinding;
+        private System.Windows.Forms.TextBox searchLastIssues;
+        private DevExpress.XtraLayout.LayoutControlItem layoutControlItem7;
+        private DevExpress.XtraGrid.Columns.GridColumn colIssueStatus;
 
         public partial class AppointmentRedmineRegionFactory : Microsoft.Office.Tools.Outlook.IFormRegionFactory
         {

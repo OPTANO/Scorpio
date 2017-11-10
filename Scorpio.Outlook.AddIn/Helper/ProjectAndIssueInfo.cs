@@ -29,61 +29,41 @@
 
 #endregion
 
-namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
+namespace Scorpio.Outlook.AddIn.Helper
 {
+    using System.Collections.Generic;
+
+    using Scorpio.Outlook.AddIn.LocalObjects;
+
     /// <summary>
-    /// Factory for providing a redmine manager instance
+    /// Class for storing project an issue infos
     /// </summary>
-    public class ExternalDataSourceFactory
+    public class ProjectAndIssueInfo
     {
-        /// <summary>
-        /// The manager class to use
-        /// </summary>
-        private static IExternalSource manager;
-        
-        #region Public Methods and Operators
+        #region Constructors and Destructors
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ExternalDataSourceFactory"/> class.
+        /// Initializes a new instance of the <see cref="ProjectAndIssueInfo"/> class.
         /// </summary>
-        /// <param name="address">
-        /// The host address.
-        /// </param>
-        /// <param name="apiKey">
-        /// The api key.
-        /// </param>
-        /// <param name="limitForNumberIssues">the limit to use for the number of issues to download</param>
-        private ExternalDataSourceFactory(string address, string apiKey, int limitForNumberIssues)
+        public ProjectAndIssueInfo()
         {
-            // UseTestManager = true;
-            if (UseTestManager)
-            {
-                manager = new LocalListsExternalDataSourceTest { Limit = limitForNumberIssues };
-            }
-            else
-            {
-                manager = new RedmineManagerInstance(address, apiKey, limitForNumberIssues);
-            }
+            this.Projects = new List<ProjectInfo>();
+            this.Issues = new List<IssueInfo>();
         }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether a test manager should be used
-        /// </summary>
-        internal static bool UseTestManager { get; set; }
+        #endregion
+
+        #region Public Properties
 
         /// <summary>
-        /// Method to get a redmine manager instance
+        /// Gets the issues
         /// </summary>
-        /// <param name="address">the host address</param>
-        /// <param name="apiKey">the api key</param>
-        /// <param name="limitForNumber">the limit to use for the number of issues</param>
-        /// <returns>the redmine manager</returns>
-        public static IExternalSource GetRedmineMangerInstance(string address, string apiKey, int limitForNumber)
-        {
-            var factory = new ExternalDataSourceFactory(address, apiKey, limitForNumber);
-            return manager;
-            
-        }
+        public List<IssueInfo> Issues { get; private set; }
+
+        /// <summary>
+        /// Gets the projects
+        /// </summary>
+        public List<ProjectInfo> Projects { get; private set; }
 
         #endregion
     }

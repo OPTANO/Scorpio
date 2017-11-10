@@ -29,60 +29,55 @@
 
 #endregion
 
-namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
+namespace Scorpio.Outlook.AddIn.Misc
 {
+    using System.ComponentModel;
+    using System.Runtime.CompilerServices;
+
     /// <summary>
-    /// Factory for providing a redmine manager instance
+    /// The base ViewModel class. Implements <see cref="INotifyPropertyChanged"/> Interface. 
     /// </summary>
-    public class ExternalDataSourceFactory
+    public abstract class ViewModelBase : INotifyPropertyChanged
     {
-        /// <summary>
-        /// The manager class to use
-        /// </summary>
-        private static IExternalSource manager;
-        
-        #region Public Methods and Operators
+        #region Public Events
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ExternalDataSourceFactory"/> class.
+        /// The PropertyChanged Event.
         /// </summary>
-        /// <param name="address">
-        /// The host address.
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        #endregion
+
+        #region Methods
+
+        /// <summary>
+        /// Raises the <see cref="PropertyChanged"/> Event for the given property name..
+        /// </summary>
+        /// <param name="propertyName">
+        /// The property name.
         /// </param>
-        /// <param name="apiKey">
-        /// The api key.
-        /// </param>
-        /// <param name="limitForNumberIssues">the limit to use for the number of issues to download</param>
-        private ExternalDataSourceFactory(string address, string apiKey, int limitForNumberIssues)
+        protected virtual void RaisePropertyChanged([CallerMemberName] string propertyName = null)
         {
-            // UseTestManager = true;
-            if (UseTestManager)
-            {
-                manager = new LocalListsExternalDataSourceTest { Limit = limitForNumberIssues };
-            }
-            else
-            {
-                manager = new RedmineManagerInstance(address, apiKey, limitForNumberIssues);
-            }
+            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether a test manager should be used
+        /// Sets the <paramref name="storage"/> to the <paramref name="value"/> and raises <see cref="PropertyChanged"/> Event.
         /// </summary>
-        internal static bool UseTestManager { get; set; }
-
-        /// <summary>
-        /// Method to get a redmine manager instance
-        /// </summary>
-        /// <param name="address">the host address</param>
-        /// <param name="apiKey">the api key</param>
-        /// <param name="limitForNumber">the limit to use for the number of issues</param>
-        /// <returns>the redmine manager</returns>
-        public static IExternalSource GetRedmineMangerInstance(string address, string apiKey, int limitForNumber)
+        /// <typeparam name="T">The proeprty type</typeparam>
+        /// <param name="storage">The propertye field</param>
+        /// <param name="value">The new value</param>
+        /// <param name="propertyName">The property name</param>
+        /// <returns>True if the <see cref="PropertyChanged"/> Event was raised.</returns>
+        protected virtual bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string propertyName = null)
         {
-            var factory = new ExternalDataSourceFactory(address, apiKey, limitForNumber);
-            return manager;
-            
+            if (!object.Equals(storage, value))
+            {
+                storage = value;
+                this.RaisePropertyChanged(propertyName);
+                return true;
+            }
+            return false;
         }
 
         #endregion

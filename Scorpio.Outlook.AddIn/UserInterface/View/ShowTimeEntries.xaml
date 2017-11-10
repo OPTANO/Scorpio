@@ -1,0 +1,48 @@
+﻿<dx:DXWindow x:Class="Scorpio.Outlook.AddIn.UserInterface.View.ShowTimeEntries"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Scorpio.Outlook.AddIn.UserInterface.View"
+             xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+             xmlns:dxg="http://schemas.devexpress.com/winfx/2008/xaml/grid"
+             xmlns:ViewModel="clr-namespace:Scorpio.Outlook.AddIn.UserInterface.ViewModel"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance ViewModel:ShowTimeEntriesViewModel}"
+             d:DesignHeight="300" d:DesignWidth="300" dx:ThemeManager.ThemeName="Office2013" Height="300" Width="300" Title="Gebuchte Zeiten">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="..\Resources\Resources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock Style="{StaticResource DialogHeader}" Grid.Row="0" Text="Wählen Sie einen Zeitraum aus, für den Sie sich Ihre in SCORPIO gebuchten Zeiten anzeigen lassen wollen." TextWrapping="Wrap" />
+        <Grid Grid.Row="1" Margin="0,9,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Beginn Datum: " />
+            <DatePicker Grid.Row="0" Grid.Column="1" SelectedDate="{Binding BeginDate}" />
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Ende Datum: " />
+            <DatePicker Grid.Row="1" Grid.Column="1" SelectedDate="{Binding EndDate}" />
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Gebuchte Stunden: " />
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding BookedHoursInTimeSpan, StringFormat={}{0:N2}h }" FontWeight="Bold"></TextBlock>
+        </Grid>
+        <Button Grid.Row="3" Content="Schließen" HorizontalAlignment="Right" Margin="0,0,2,2" VerticalAlignment="Bottom" Click="CloseButtonClick" />
+    </Grid>
+</dx:DXWindow>

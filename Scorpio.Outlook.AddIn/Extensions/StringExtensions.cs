@@ -31,6 +31,10 @@
 
 namespace Scorpio.Outlook.AddIn.Extensions
 {
+    using System.Text.RegularExpressions;
+
+    using DevExpress.Mvvm.Native;
+
     /// <summary>
     /// Extension methods for strings
     /// </summary>
@@ -48,7 +52,7 @@ namespace Scorpio.Outlook.AddIn.Extensions
         #region Public Methods and Operators
 
         /// <summary>
-        /// Gets teh string to use for search of unknown issues
+        /// Gets the string to use for search of unknown issues
         /// </summary>
         /// <param name="text">the text to check</param>
         /// <returns>the text to use for search or null if none should be used</returns>
@@ -75,6 +79,28 @@ namespace Scorpio.Outlook.AddIn.Extensions
                 }
             }
             return stringToReturn;
+        }
+
+        /// <summary>
+        /// Checks whether the string contains all words of the given <paramref name="search"/> parameter.
+        /// The comparison is case insensitive.
+        /// </summary>
+        /// <param name="text">The string to check</param>
+        /// <param name="search">Whitespace seperated list of words</param>
+        /// <returns>True if the string contains all words of the <paramref name="search"/> parameter</returns>
+        public static bool ContainsAllWords(this string text, string search)
+        {
+            var pattern = @"\s+";
+            var elements = Regex.Split(search, pattern);
+            var lowerText = text.ToLower();
+            foreach (var word in elements)
+            {
+                if (!lowerText.Contains(word.ToLower()))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         #endregion

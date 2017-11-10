@@ -29,62 +29,37 @@
 
 #endregion
 
-namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
+namespace Scorpio.Outlook.AddIn.UserInterface.View
 {
     /// <summary>
-    /// Factory for providing a redmine manager instance
+    /// Interaction logic for ShowTimeEntries.xaml
     /// </summary>
-    public class ExternalDataSourceFactory
+    public partial class ShowTimeEntries
     {
-        /// <summary>
-        /// The manager class to use
-        /// </summary>
-        private static IExternalSource manager;
-        
-        #region Public Methods and Operators
+        #region Constructors and Destructors
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ExternalDataSourceFactory"/> class.
+        /// Initializes a new instance of the <see cref="ShowTimeEntries"/> class
         /// </summary>
-        /// <param name="address">
-        /// The host address.
-        /// </param>
-        /// <param name="apiKey">
-        /// The api key.
-        /// </param>
-        /// <param name="limitForNumberIssues">the limit to use for the number of issues to download</param>
-        private ExternalDataSourceFactory(string address, string apiKey, int limitForNumberIssues)
+        public ShowTimeEntries()
         {
-            // UseTestManager = true;
-            if (UseTestManager)
-            {
-                manager = new LocalListsExternalDataSourceTest { Limit = limitForNumberIssues };
-            }
-            else
-            {
-                manager = new RedmineManagerInstance(address, apiKey, limitForNumberIssues);
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether a test manager should be used
-        /// </summary>
-        internal static bool UseTestManager { get; set; }
-
-        /// <summary>
-        /// Method to get a redmine manager instance
-        /// </summary>
-        /// <param name="address">the host address</param>
-        /// <param name="apiKey">the api key</param>
-        /// <param name="limitForNumber">the limit to use for the number of issues</param>
-        /// <returns>the redmine manager</returns>
-        public static IExternalSource GetRedmineMangerInstance(string address, string apiKey, int limitForNumber)
-        {
-            var factory = new ExternalDataSourceFactory(address, apiKey, limitForNumber);
-            return manager;
-            
+            this.InitializeComponent();
         }
 
         #endregion
+
+        /// <summary>
+        /// The close button click.
+        /// </summary>
+        /// <param name="sender">
+        /// The sender.
+        /// </param>
+        /// <param name="e">
+        /// The e.
+        /// </param>
+        private void CloseButtonClick(object sender, System.Windows.RoutedEventArgs e)
+        {
+            this.Close();
+        }
     }
 }

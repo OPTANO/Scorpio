@@ -33,10 +33,7 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
 {
     using System;
     using System.Collections.Generic;
-    using System.Collections.Specialized;
-
-    using global::Redmine.Net.Api.Types;
-
+    
     using Scorpio.Outlook.AddIn.LocalObjects;
     using Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource.Exceptions;
 
@@ -51,6 +48,11 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
         int Limit { get; set; }
 
         /// <summary>
+        /// Gets a hash set containing all project ids whose status is watched
+        /// </summary>
+        HashSet<int> ProjectsWithWatchedIssueStatus { get; }
+
+            /// <summary>
         /// Method to create an object from teh given time entry
         /// </summary>
         /// <param name="entry">the time entry</param>
