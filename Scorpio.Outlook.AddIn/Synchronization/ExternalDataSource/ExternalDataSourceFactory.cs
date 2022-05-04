@@ -58,7 +58,8 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
             // UseTestManager = true;
             if (UseTestManager)
             {
-                manager = new LocalListsExternalDataSourceTest { Limit = limitForNumberIssues };
+                manager = new LocalListsExternalDataSourceTest();
+                manager.Limit = limitForNumberIssues;
             }
             else
             {

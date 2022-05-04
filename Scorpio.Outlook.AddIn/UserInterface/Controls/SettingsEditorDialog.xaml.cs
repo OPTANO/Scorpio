@@ -77,21 +77,10 @@ namespace Scorpio.Outlook.AddIn.UserInterface.Controls
         /// </summary>
         private ICommand _removeFavoriteCommand;
 
-
-        /// <summary>
-        /// Private field for the command which removes an project from the list of watched projects.
-        /// </summary>
-        private ICommand _removeWatchedCommand;
-
         /// <summary>
         /// The selected issue.
         /// </summary>
         private IssueInfo _selectedIssue;
-
-        /// <summary>
-        /// The selected project.
-        /// </summary>
-        private ProjectInfo _selectedProject;
 
         /// <summary>
         /// Backing field for the refresh time
@@ -148,27 +137,6 @@ namespace Scorpio.Outlook.AddIn.UserInterface.Controls
                     this.AvailableIssues = new ObservableCollection<IssueInfo>();
                     Log.Error("Error while setting the overall issue list in the settings dialog", e);
                 }
-
-                try
-                {
-                    this.AvailableProjects = new ObservableCollection<ProjectInfo>(Globals.ThisAddIn.Synchronizer.AllProjects);
-                }
-                catch (Exception e)
-                {
-                    this.AvailableProjects = new ObservableCollection<ProjectInfo>();
-                    Log.Error("Error while setting the overall project list in the settings dialog", e);
-                }
-
-                try
-                {
-                    this.WatchedProjects = new ObservableCollection<ProjectInfo>(Globals.ThisAddIn.Synchronizer.WatchedProjects);
-                }
-                catch (Exception e)
-                {
-                    this.WatchedProjects = new ObservableCollection<ProjectInfo>();
-                    Log.Error("Error while setting the watched projects in the settings dialog", e);
-                }
-
                 Debug.WriteLine($"AvailableIssues after {stopWatch.ElapsedMilliseconds}ms");
 
                 this.RefreshTime = Settings.Default.RefreshTime;
@@ -203,16 +171,6 @@ namespace Scorpio.Outlook.AddIn.UserInterface.Controls
         /// Gets or sets the issues that are marked as favorite issues.
         /// </summary>
         public ObservableCollection<IssueInfo> FavoriteIssues { get; set; }
-
-        /// <summary>
-        /// Gets or sets the projects available for using as watched projects.
-        /// </summary>
-        public ObservableCollection<ProjectInfo> AvailableProjects { get; set; }
-
-        /// <summary>
-        /// Gets or sets the issues that are marked as watched projects.
-        /// </summary>
-        public ObservableCollection<ProjectInfo> WatchedProjects { get; set; }
 
         /// <summary>
         /// Gets or sets the refresh time
@@ -327,18 +285,6 @@ namespace Scorpio.Outlook.AddIn.UserInterface.Controls
         }
 
         /// <summary>
-        /// Gets the command which removes the specified issue from the list of favorite issues.
-        /// </summary>
-        public ICommand RemoveWatchedCommand
-        {
-            get
-            {
-                return this._removeWatchedCommand
-                       ?? (this._removeWatchedCommand = new RelayCommand<ProjectInfo>(i => this.WatchedProjects.Remove(i), i => true));
-            }
-        }
-
-        /// <summary>
         /// Gets or sets the issue which is selected to be added as a new favorite issue.
         /// </summary>
         public IssueInfo SelectedIssue
@@ -357,47 +303,9 @@ namespace Scorpio.Outlook.AddIn.UserInterface.Controls
             }
         }
 
-        /// <summary>
-        /// Gets or sets the project which is selected to be added as a new watched project.
-        /// </summary>
-        public ProjectInfo SelectedProject
-        {
-            get
-            {
-                return this._selectedProject;
-            }
-            set
-            {
-                if (!object.Equals(this._selectedProject, value))
-                {
-                    this._selectedProject = value;
-                    this.NotifyPropertyChanged();
-                }
-            }
-        }
-
         #endregion
 
         #region Methods
-
-        /// <summary>
-        /// Method that is called when the user wants to add an issue to their favorite issues.
-        /// </summary>
-        /// <param name="sender">The sender</param>
-        /// <param name="e">The event arguments</param>
-        private void AddWatched_OnClick(object sender, RoutedEventArgs e)
-        {
-            if (this.SelectedProject != null)
-            {
-                if (!this.WatchedProjects.Contains(this.SelectedProject))
-                {
-                    this.WatchedProjects.Add(this.SelectedProject);
-                }
-                this.SelectedProject = null;
-            }
-        }
-
-        
 
         /// <summary>
         /// Method that is called when the user wants to add an issue to their favorite issues.
@@ -466,7 +374,6 @@ namespace Scorpio.Outlook.AddIn.UserInterface.Controls
             Settings.Default.Save();
 
             Globals.ThisAddIn.Synchronizer.UpdateFavoriteIssues(this.FavoriteIssues.ToList());
-            Globals.ThisAddIn.Synchronizer.UpdateWatchedProjects(this.WatchedProjects.ToList());
 
             this.DialogResult = true;
             this.Close();

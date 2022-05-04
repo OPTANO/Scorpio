@@ -3,7 +3,7 @@
 // ////////////////////////////////////////////////////////////////////////////////
 //                                                                   
 //        ORCONOMY GmbH Source Code                                   
-//        Copyright (c) 2010-2017 ORCONOMY GmbH                       
+//        Copyright (c) 2010-2016 ORCONOMY GmbH                       
 //        ALL RIGHTS RESERVED.                                        
 //                                                                    
 //    The entire contents of this file is protected by German and       
@@ -40,25 +40,8 @@ namespace Scorpio.Outlook.AddIn.LocalObjects
     [Serializable]
     public class IssueInfo : AbstractInfoBase
     {
-
-        /// <summary>
-        /// The string for open issue status
-        /// </summary>
-        private const string Open = "offen";
-
-        /// <summary>
-        /// The string for closed issue status
-        /// </summary>
-        private const string Closed = "geschlossen";
-
-        /// <summary>
-        /// The string for unknown issue status
-        /// </summary>
-        private const string Unknown = "-";
-
-
         #region Public properties
-
+        
         /// <summary>
         /// Gets the issue id with the sharp sign in front, as a sting.
         /// </summary>
@@ -69,7 +52,7 @@ namespace Scorpio.Outlook.AddIn.LocalObjects
                 return "#" + this.Id;
             }
         }
-
+        
         /// <summary>
         /// Gets the display name for the issue.
         /// </summary>
@@ -80,7 +63,7 @@ namespace Scorpio.Outlook.AddIn.LocalObjects
                 return string.Format("#{0} - {1} - [{2}]", this.Id, this.Name, this.ProjectShortName);
             }
         }
-
+        
         /// <summary>
         /// Gets or sets the id of the corresponding project
         /// </summary>
@@ -90,35 +73,6 @@ namespace Scorpio.Outlook.AddIn.LocalObjects
         /// Gets or sets the short name of the corresponding project
         /// </summary>
         public string ProjectShortName { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the ticket status is open (true) or closed (false). If the value is null, the status is unknown.
-        /// </summary>
-        public bool? HasOpenStatus { get; set; }
-
-        /// <summary>
-        /// Gets the status string for the issue
-        /// </summary>
-        public string StatusString
-        {
-            get
-            {
-                string status;
-                switch (this.HasOpenStatus)
-                {
-                    case true:
-                        status = Open;
-                        break;
-                    case null:
-                        status = Unknown;
-                        break;
-                    default:
-                        status = Closed;
-                        break;
-                }
-                return status;
-            }
-        }
 
         #endregion
     }

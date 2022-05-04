@@ -29,83 +29,68 @@
 
 #endregion
 
-namespace Scorpio.Outlook.Addin.Tests.LocalObjects
+namespace Scorpio.Outlook.Addin.Tests.Synchronization
 {
+    using System.Collections.Generic;
+    using System.Linq;
+
     using NUnit.Framework;
 
     using Scorpio.Outlook.AddIn.LocalObjects;
+    using Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource;
+    using Scorpio.Outlook.AddIn.Synchronization.Helper;
 
     /// <summary>
-    /// Test for the issue info object
+    /// Test class containing tests for the synchronizer class
     /// </summary>
     [TestFixture]
-    public class IssueInfoTests
+    public class DownloadHelperTest
     {
         /// <summary>
-        /// Test to test the issue string
+        /// Method to test the download of issues
         /// </summary>
         [Test]
-        public void TestIssueString()
+        public void TestIssueDownloader()
         {
-            // arrange
-            var issueInfo = new IssueInfo() { Id = 4, Name = "Name", ProjectShortName = "ProjectShortName", ProjectId = 5, };
+            // initialize parameter needed
+            var newProjects = new List<ProjectInfo>();
+            var currentIssues = new Dictionary<int, IssueInfo>();
 
-            // act
-            var displayValue = issueInfo.IssueString;
+            // get external data source
+            ExternalDataSourceFactory.UseTestManager = true;
+            var source = ExternalDataSourceFactory.GetRedmineMangerInstance("", "", 50);
+            
+            // download issues
+            var issues = DownloadHelper.DownloadIssues(newProjects, currentIssues, source);
 
             // assert
-            Assert.That(displayValue, Is.EqualTo("#4"));
+            Assert.That(issues.Count, Is.GreaterThan(0));
         }
 
         /// <summary>
-        /// Test to test the issue string
+        /// Method to test the download of issues
         /// </summary>
         [Test]
-        public void TestIssueEqualInOtherProject()
+        public void TestNewIssuesOverExistingIssues()
         {
-            // arrange
-            var issueInfo = new IssueInfo() { Id = 4, Name = "Name", ProjectShortName = "ProjectShortName2", ProjectId = 6, };
-            var issueInfo2 = new IssueInfo() { Id = 4, Name = "Name", ProjectShortName = "ProjectShortName", ProjectId = 5, };
-
-            // act
-            var areEqual = object.Equals(issueInfo2, issueInfo);
-
+            // initialize parameter needed
+            var newProjects = new List<ProjectInfo>();
+            var currentIssues = new Dictionary<int, IssueInfo>();
+            var changedIssue = new IssueInfo() { Id = 0, ProjectId = 42 };
+            currentIssues.Add(0, changedIssue);
+            
+            // get external data source
+            ExternalDataSourceFactory.UseTestManager = true;
+            var source = ExternalDataSourceFactory.GetRedmineMangerInstance("", "", 50);
+            var issuesChangedProject = DownloadHelper.DownloadIssues(newProjects, currentIssues, source);
+            
             // assert
-            Assert.That(areEqual, Is.True);
-        }
-
-
-        /// <summary>
-        /// Test to test the issue being equal in the same project
-        /// </summary>
-        [Test]
-        public void TestIssueEqualInSameProject()
-        {
-            // arrange
-            var issueInfo = new IssueInfo() { Id = 4, Name = "Name", ProjectShortName = "ProjectShortName", ProjectId = 5, };
-            var issueInfo2 = new IssueInfo() { Id = 4, Name = "Name", ProjectShortName = "ProjectShortName", ProjectId = 5, };
-
-            // act
-            var areEqual = object.Equals(issueInfo2, issueInfo);
-
-            // assert
-            Assert.That(areEqual, Is.True);
-        }
-
-        /// <summary>
-        /// Method to test for a correct display value
-        /// </summary>
-        [Test]
-        public void TestDisplayValue()
-        {
-            // arrange
-            var issueInfo = new IssueInfo() { Id = 4, Name = "Name", ProjectShortName = "ProjectShortName", ProjectId = 5, };
-
-            // act
-            var displayValue = issueInfo.DisplayValue;
-
-            // assert
-            Assert.That(displayValue, Is.EqualTo("#4 - Name - [ProjectShortName]"));
+            Assert.That(issuesChangedProject.Count, Is.GreaterThanOrEqualTo(1));
+            Assert.That(changedIssue.Id.HasValue, Is.True);
+            var issueId = changedIssue.Id.Value;
+            Assert.That(issuesChangedProject.Keys, Contains.Item(issueId));
+            var issue = issuesChangedProject[issueId];
+            Assert.That(issue.ProjectId, Is.EqualTo(0));
         }
     }
 }

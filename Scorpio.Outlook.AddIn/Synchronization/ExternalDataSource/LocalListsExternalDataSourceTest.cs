@@ -98,7 +98,6 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
             this._projects = new List<ProjectInfo>();
             this._timeEntries = new List<TimeEntryInfo>();
             this._timeEntryActivities = new List<ActivityInfo>();
-            this.ProjectsWithWatchedIssueStatus = new HashSet<int>();
             
             // add activities
             var defaultActivity = new ActivityInfo() { Id = 1, Name = "Standard", IsDefault = true };
@@ -147,9 +146,6 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
         /// Gets or sets the limit for a request made
         /// </summary>
         public int Limit { get; set; }
-
-        /// <inheritdoc />
-        public HashSet<int> ProjectsWithWatchedIssueStatus { get; }
 
         /// <summary>
         /// Method to create an object from teh given time entry

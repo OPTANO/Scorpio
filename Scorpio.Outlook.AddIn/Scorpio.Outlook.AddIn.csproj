@@ -41,7 +41,7 @@
     <PublishUrl>\\orcserv01\Daten\Software\SCORPIO Release\</PublishUrl>
     <InstallUrl>\\orcserv01\Daten\Software\SCORPIO Release\</InstallUrl>
     <TargetCulture>de</TargetCulture>
-    <ApplicationVersion>1.5.0.2</ApplicationVersion>
+    <ApplicationVersion>1.4.2.1</ApplicationVersion>
     <AutoIncrementApplicationRevision>true</AutoIncrementApplicationRevision>
     <UpdateEnabled>true</UpdateEnabled>
     <UpdateInterval>0</UpdateInterval>
@@ -383,8 +383,6 @@
       <DependentUpon>AppointmentRedmineRegion.cs</DependentUpon>
     </Compile>
     <Compile Include="Extensions\StringExtensions.cs" />
-    <Compile Include="Helper\ProjectAndIssueInfo.cs" />
-    <Compile Include="Helper\ProjectLists.cs" />
     <Compile Include="LocalObjects\AbstractInfoBase.cs" />
     <Compile Include="LocalObjects\ActivityInfo.cs" />
     <Compile Include="Extensions\AppointmentExtensions.cs" />
@@ -566,12 +564,6 @@
     <Resource Include="Resources\outlook_calendar_day.png" />
     <Resource Include="Resources\outlook_calendar_month.png" />
     <Resource Include="Resources\outlook_calendar_week.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\refresh_ticket_status.bmp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\refresh_all.png" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

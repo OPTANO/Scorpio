@@ -35,9 +35,9 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
     using System.Collections.Generic;
     using System.Collections.Specialized;
     using System.Linq;
-
-    using Redmine.Net.Api;
-    using Redmine.Net.Api.Types;
+ 
+    using global::Redmine.Net.Api;
+    using global::Redmine.Net.Api.Types;
 
     using Scorpio.Outlook.AddIn.LocalObjects;
     using Scorpio.Outlook.AddIn.Properties;
@@ -60,7 +60,7 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
         /// The manager is reset, if the connection changes, hence this is ok
         /// </summary>
         private UserInfo _userInfo;
-
+        
         #endregion
 
         #region Constructors and Destructors
@@ -80,26 +80,16 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
             this._redmineApi = new RedmineManager(address, apiKey);
             this._redmineApi.PageSize = 50;
             this.Limit = limit;
-            this.ProjectsWithWatchedIssueStatus = new HashSet<int>();
         }
-
-        #endregion
-
-        #region Public Properties
-
-        /// <summary>
-        /// Gets or sets the limit for a request made
-        /// </summary>
-        public int Limit { get; set; }
 
         #endregion
 
         #region Public Methods and Operators
 
         /// <summary>
-        /// Gets the ids of the projects with watched issue status
+        /// Gets or sets the limit for a request made
         /// </summary>
-        public HashSet<int> ProjectsWithWatchedIssueStatus { get; }
+        public int Limit { get; set; }
 
         /// <summary>
         /// Method to create an object from the given time entry
@@ -137,212 +127,6 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
                 }
             }
         }
-
-        /// <summary>
-        /// Method to delete an object by its name
-        /// </summary>
-        /// <param name="objectIdentifier">the identifier of the object</param>
-        /// <param name="parameters">the name value collection</param>
-        public void DeleteTimeEntry(int? objectIdentifier, DataSourceParameter parameters)
-        {
-            if (objectIdentifier.HasValue)
-            {
-                try
-                {
-                    this._redmineApi.DeleteObject<TimeEntry>(objectIdentifier.ToString(), this.GetParametersForQuery(parameters));
-                }
-                catch (RedmineException redmineException)
-                {
-                    if (redmineException.Message.Equals("Not Found"))
-                    {
-                        // nothing to do, the item does no longer exist in redmine, so we can delete it in the application
-                    }
-                    else
-                    {
-                        var typeNumber = redmineException.HResult;
-                        if (redmineException.Message.Contains("Die zugrunde liegende Verbindung wurde geschlossen"))
-                        {
-                            throw new ConnectionException(redmineException) { IdentifierNumber = typeNumber };
-                        }
-                        else
-                        {
-                            throw new CrudException(OperationType.Delete, null, redmineException) { IdentifierNumber = typeNumber };
-                        }
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Method to get the current user logged in to redmine
-        /// </summary>
-        /// <returns>the user</returns>
-        public UserInfo GetCurrentUser()
-        {
-            if (this._userInfo == null)
-            {
-                var redmineUser = this._redmineApi.GetCurrentUser();
-                var name = string.Format("{0} {1} ({2})", redmineUser.FirstName, redmineUser.LastName, redmineUser.Login);
-                var user = new UserInfo() { Id = redmineUser.Id, Name = name };
-                this._userInfo = user;
-            }
-            return this._userInfo;
-        }
-
-        /// <summary>
-        /// Method to get the list of all issues matching the given parameter
-        /// </summary>
-        /// <param name="parameters">the parameters</param>
-        /// <returns>the list containing all objects</returns>
-        public IList<IssueInfo> GetIssueInfoList(DataSourceParameter parameters)
-        {
-            var parameter = this.GetParametersForQuery(parameters);
-            var issues = this._redmineApi.GetObjectList<Issue>(parameter);
-            var issueInfos = issues.Select(this.CreateIssueInfo).ToList();
-
-            return issueInfos;
-        }
-
-        /// <summary>
-        /// Method to get the total object list of all activities
-        /// </summary>
-        /// <param name="parameters">the parameters</param>
-        /// <param name="statusCallback">a statusCallback to be run after the list is obtained</param>
-        /// <returns>the list containing all objects</returns>
-        public IList<ActivityInfo> GetTotalActivityInfoList(DataSourceParameter parameters, Action<int, int> statusCallback = null)
-        {
-            var activities = this._redmineApi.GetTotalObjectList<TimeEntryActivity>(this.GetParametersForQuery(parameters), statusCallback);
-            var activityInfos = activities.Select(a => new ActivityInfo() { Id = a.Id, Name = a.Name, IsDefault = a.IsDefault }).ToList();
-            return activityInfos;
-        }
-
-        /// <summary>
-        /// Method to get the total object list of all issues
-        /// </summary>
-        /// <param name="parameters">the parameters</param>
-        /// <param name="statusCallback">a statusCallback to be run after the list is obtained</param>
-        /// <returns>the list containing all objects</returns>
-        public IList<IssueInfo> GetTotalIssueInfoList(DataSourceParameter parameters, Action<int, int> statusCallback = null)
-        {
-            // assert that there is no limit parameter set
-            if (parameters.Limit.HasValue)
-            {
-                throw new ArgumentException("No limit parameter may be set for this method.");
-            }
-
-            // get parameter and issues
-            var parameter = this.GetParametersForQuery(parameters);
-            var issues = this._redmineApi.GetTotalObjectList<Issue>(parameter, statusCallback);
-
-            // convert issues
-            var issueInfos = issues.Select(this.CreateIssueInfo).ToList();
-
-            return issueInfos;
-        }
-
-        /// <summary>
-        /// Method to get the total object list of all projects
-        /// </summary>
-        /// <param name="parameters">the parameters</param>
-        /// <param name="statusCallback">a statusCallback to be run after the list is obtained</param>
-        /// <returns>the list containing all objects</returns>
-        public IList<ProjectInfo> GetTotalProjectList(DataSourceParameter parameters, Action<int, int> statusCallback = null)
-        {
-            var projects = this._redmineApi.GetTotalObjectList<Project>(this.GetParametersForQuery(parameters), statusCallback);
-            var projectInfos = projects.Select(p => new ProjectInfo() { Id = p.Id, Name = p.Identifier }).ToList();
-
-            return projectInfos;
-        }
-
-        /// <summary>
-        /// Method to get the total object list of all time entries
-        /// </summary>
-        /// <param name="parameters">the parameters</param>
-        /// <param name="statusCallback">a statusCallback to be run after the list is obtained</param>
-        /// <returns>the list containing all objects</returns>
-        public IList<TimeEntryInfo> GetTotalTimeEntryInfoList(DataSourceParameter parameters, Action<int, int> statusCallback = null)
-        {
-            var timeEntries = this._redmineApi.GetTotalObjectList<TimeEntry>(this.GetParametersForQuery(parameters), statusCallback);
-            var timeEntryInfos = timeEntries.Select(
-                te =>
-                    {
-                        var timeOfAction = te.SpentOn.Value.Date;
-                        var customFields = te.CustomFields;
-                        var startField = customFields.FirstOrDefault(f => f.Name == "Start");
-                        if (startField != null)
-                        {
-                            var startText = startField.Values.First().Info;
-                            var startTextSplit = startText.Split(':');
-                            if (startTextSplit.Length == 2)
-                            {
-                                var minutes = 0;
-                                var hours = 0;
-                                var parseSuccessful = int.TryParse(startTextSplit[1], out minutes) && int.TryParse(startTextSplit[0], out hours);
-
-                                if (parseSuccessful)
-                                {
-                                    var startDateTime = timeOfAction.AddHours(hours).AddMinutes(minutes);
-
-                                    var info = new TimeEntryInfo()
-                                                   {
-                                                       Id = te.Id,
-                                                       Name = te.Comments,
-                                                       UpdateTime = te.UpdatedOn.Value,
-                                                       StartDateTime = startDateTime,
-                                                       EndDateTime = startDateTime.AddHours((double)te.Hours),
-                                                       IssueInfo = CreateIssueInfo(te),
-                                                       ActivityInfo = new ActivityInfo() { Id = te.Activity.Id, Name = te.Activity.Name },
-                                                       ProjectInfo = new ProjectInfo() { Id = te.Project.Id, Name = te.Project.Name, },
-                                                   };
-                                    return info;
-                                }
-                            }
-                        }
-                        return null;
-                    }).Where(i => i != null).ToList();
-            return timeEntryInfos;
-        }
-
-        /// <summary>
-        /// Method to update the given object with the data contained in the object. The object has the id set, all other values should be updated
-        /// </summary>
-        /// <param name="item">the entry to update</param>
-        /// <returns>the time entry info of the updated object</returns>
-        public TimeEntryInfo UpdateObject(TimeEntryInfo item)
-        {
-            try
-            {
-                // create the time entry to send to redmine
-                var timeEntry = this.CreateTimeEntryFromInfoObject(item);
-
-                // write the object to redmine
-                this._redmineApi.UpdateObject(timeEntry.Id.ToString(), timeEntry);
-
-                if (timeEntry.Project != null)
-                {
-                    item.ProjectInfo = new ProjectInfo() { Id = timeEntry.Project.Id, Name = timeEntry.Project.Name };
-                }
-
-                // update object and return it
-                return item;
-            }
-            catch (RedmineException redmineException)
-            {
-                var typeNumber = redmineException.HResult;
-                if (redmineException.Message.Contains("Die zugrunde liegende Verbindung wurde geschlossen"))
-                {
-                    throw new ConnectionException(redmineException) { IdentifierNumber = typeNumber };
-                }
-                else
-                {
-                    throw new CrudException(OperationType.Update, item, redmineException) { IdentifierNumber = typeNumber };
-                }
-            }
-        }
-
-        #endregion
-
-        #region Methods
 
         /// <summary>
         /// Method to create the a time entry from the info object
@@ -395,6 +179,228 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
         }
 
         /// <summary>
+        /// Method to update the given object with the data contained in the object. The object has the id set, all other values should be updated
+        /// </summary>
+        /// <param name="item">the entry to update</param>
+        /// <returns>the time entry info of the updated object</returns>
+        public TimeEntryInfo UpdateObject(TimeEntryInfo item)
+        {
+            try
+            {
+                // create the time entry to send to redmine
+                var timeEntry = this.CreateTimeEntryFromInfoObject(item);
+
+                // write the object to redmine
+                this._redmineApi.UpdateObject(timeEntry.Id.ToString(), timeEntry);
+
+                if (timeEntry.Project != null)
+                {
+                    item.ProjectInfo = new ProjectInfo() { Id = timeEntry.Project.Id, Name = timeEntry.Project.Name };
+                }
+                // update object and return it
+                return item;
+            }
+            catch (RedmineException redmineException)
+            {
+                var typeNumber = redmineException.HResult;
+                if (redmineException.Message.Contains("Die zugrunde liegende Verbindung wurde geschlossen"))
+                {
+                    throw new ConnectionException(redmineException) { IdentifierNumber = typeNumber };
+                }
+                else
+                {
+                    throw new CrudException(OperationType.Update, item, redmineException) { IdentifierNumber = typeNumber };
+                }
+            }
+        }
+
+        /// <summary>
+        /// Method to delete an object by its name
+        /// </summary>
+        /// <param name="objectIdentifier">the identifier of the object</param>
+        /// <param name="parameters">the name value collection</param>
+        public void DeleteTimeEntry(int? objectIdentifier, DataSourceParameter parameters)
+        {
+            if (objectIdentifier.HasValue)
+            {
+                try
+                {
+                    this._redmineApi.DeleteObject<TimeEntry>(objectIdentifier.ToString(), this.GetParametersForQuery(parameters));
+                }
+                catch (RedmineException redmineException)
+                {
+                    if (redmineException.Message.Equals("Not Found"))
+                    {
+                        // nothing to do, the item does no longer exist in redmine, so we can delete it in the application
+                    }
+                    else
+                    {
+                        var typeNumber = redmineException.HResult;
+                        if (redmineException.Message.Contains("Die zugrunde liegende Verbindung wurde geschlossen"))
+                        {
+                            throw new ConnectionException(redmineException) { IdentifierNumber = typeNumber };
+                        }
+                        else
+                        {
+                            throw new CrudException(OperationType.Delete, null, redmineException) { IdentifierNumber = typeNumber };
+                        }
+                    }
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Method to get the current user logged in to redmine
+        /// </summary>
+        /// <returns>the user</returns>
+        public UserInfo GetCurrentUser()
+        {
+            if (this._userInfo == null)
+            {
+                var redmineUser = this._redmineApi.GetCurrentUser();
+                var name = string.Format("{0} {1} ({2})", redmineUser.FirstName, redmineUser.LastName, redmineUser.Login);
+                var user = new UserInfo() { Id = redmineUser.Id, Name = name };
+                this._userInfo = user;
+            }
+            return this._userInfo;
+        }
+
+        /// <summary>
+        /// Method to get the total object list of all projects
+        /// </summary>
+        /// <param name="parameters">the parameters</param>
+        /// <param name="statusCallback">a statusCallback to be run after the list is obtained</param>
+        /// <returns>the list containing all objects</returns>
+        public IList<ProjectInfo> GetTotalProjectList(DataSourceParameter parameters, Action<int, int> statusCallback = null)
+        {
+            var projects = this._redmineApi.GetTotalObjectList<Project>(this.GetParametersForQuery(parameters), statusCallback);
+            var projectInfos = projects.Select(p => new ProjectInfo() { Id = p.Id, Name = p.Identifier }).ToList();
+
+            return projectInfos;
+        }
+
+        /// <summary>
+        /// Method to get the total object list of all issues
+        /// </summary>
+        /// <param name="parameters">the parameters</param>
+        /// <param name="statusCallback">a statusCallback to be run after the list is obtained</param>
+        /// <returns>the list containing all objects</returns>
+        public IList<IssueInfo> GetTotalIssueInfoList(DataSourceParameter parameters, Action<int, int> statusCallback = null)
+        {
+            // assert that there is no limit parameter set
+            if (parameters.Limit.HasValue)
+            {
+                throw new ArgumentException("No limit parameter may be set for this method.");
+            }
+
+            // get parameter and issues
+            var parameter = this.GetParametersForQuery(parameters);
+            var issues = this._redmineApi.GetTotalObjectList<Issue>(parameter, statusCallback);
+
+            // convert issues
+            var issueInfos =
+                issues.Select(i => new IssueInfo() { Id = i.Id, Name = i.Subject, ProjectShortName = i.Project.Name, ProjectId = i.Project.Id, })
+                    .ToList();
+            
+            return issueInfos;
+        }
+
+        /// <summary>
+        /// Method to get the list of all issues matching the given parameter
+        /// </summary>
+        /// <param name="parameters">the parameters</param>
+        /// <returns>the list containing all objects</returns>
+        public IList<IssueInfo> GetIssueInfoList(DataSourceParameter parameters)
+        {
+            var parameter = this.GetParametersForQuery(parameters);
+            var issues = this._redmineApi.GetObjectList<Issue>(parameter);
+            
+            var issueInfos =
+                issues.Select(
+                    i =>
+                        new IssueInfo()
+                            {
+                                Id = i.Id,
+                                Name = i.Subject,
+                                ProjectShortName = i.Project.Name,
+                                ProjectId = i.Project.Id
+                            }).ToList();
+
+            return issueInfos;
+        }
+
+        /// <summary>
+        /// Method to get the total object list of all activities
+        /// </summary>
+        /// <param name="parameters">the parameters</param>
+        /// <param name="statusCallback">a statusCallback to be run after the list is obtained</param>
+        /// <returns>the list containing all objects</returns>
+        public IList<ActivityInfo> GetTotalActivityInfoList(DataSourceParameter parameters, Action<int, int> statusCallback = null)
+        {
+            var activities = this._redmineApi.GetTotalObjectList<TimeEntryActivity>(this.GetParametersForQuery(parameters), statusCallback);
+            var activityInfos = activities.Select(a => new ActivityInfo() { Id = a.Id, Name = a.Name, IsDefault = a.IsDefault }).ToList();
+            return activityInfos;
+        }
+
+        /// <summary>
+        /// Method to get the total object list of all time entries
+        /// </summary>
+        /// <param name="parameters">the parameters</param>
+        /// <param name="statusCallback">a statusCallback to be run after the list is obtained</param>
+        /// <returns>the list containing all objects</returns>
+        public IList<TimeEntryInfo> GetTotalTimeEntryInfoList(DataSourceParameter parameters, Action<int, int> statusCallback = null)
+        {
+            var timeEntries = this._redmineApi.GetTotalObjectList<TimeEntry>(this.GetParametersForQuery(parameters), statusCallback);
+            var timeEntryInfos = timeEntries.Select(
+                te =>
+                    {
+                        var timeOfAction = te.SpentOn.Value.Date;
+                        var customFields = te.CustomFields;
+                        var startField = customFields.FirstOrDefault(f => f.Name == "Start");
+                        if (startField != null)
+                        {
+                            var startText = startField.Values.First().Info;
+                            var startTextSplit = startText.Split(':');
+                            if (startTextSplit.Length == 2)
+                            {
+                                var minutes = 0;
+                                var hours = 0;
+                                var parseSuccessful = int.TryParse(startTextSplit[1], out minutes) && int.TryParse(startTextSplit[0], out hours);
+
+                                if (parseSuccessful)
+                                {
+                                    var startDateTime = timeOfAction.AddHours(hours).AddMinutes(minutes);
+
+                                    var info = new TimeEntryInfo()
+                                                   {
+                                                       Id = te.Id,
+                                                       Name = te.Comments,
+                                                       UpdateTime = te.UpdatedOn.Value,
+                                                       StartDateTime = startDateTime,
+                                                       EndDateTime = startDateTime.AddHours((double)te.Hours),
+                                                       IssueInfo =
+                                                           new IssueInfo()
+                                                               {
+                                                                   Id = te.Issue.Id,
+                                                                   Name = te.Issue.Name,
+                                                                   ProjectId = te.Project.Id,
+                                                                   ProjectShortName = te.Project.Name
+                                                               },
+                                                       ActivityInfo = new ActivityInfo() { Id = te.Activity.Id, Name = te.Activity.Name },
+                                                       ProjectInfo = new ProjectInfo() { Id = te.Project.Id, Name = te.Project.Name, },
+                                                   };
+                                    return info;
+                                }
+                            }
+                        }
+                        return null;
+                    }).Where(i => i != null).ToList();
+            return timeEntryInfos;
+        }
+        
+        #endregion
+
+        /// <summary>
         /// Method to get the parameter to use for the query
         /// </summary>
         /// <param name="parameter">the parameter given</param>
@@ -444,58 +450,8 @@ namespace Scorpio.Outlook.AddIn.Synchronization.ExternalDataSource
                     queryParameter.Add("assigned_to_id", parameter.AssignedToUserId.Value == -1 ? "me" : parameter.AssignedToUserId.Value.ToString());
                 }
             }
-
+            
             return queryParameter;
         }
-
-        /// <summary>
-        /// Method to create an issue info object from the api object
-        /// </summary>
-        /// <param name="issue">the issue obtained from the api</param>
-        /// <returns>the issue which can be used for the application</returns>
-        private IssueInfo CreateIssueInfo(Issue issue)
-        {
-            var issueName = new IdentifiableName() { Id = issue.Id, Name = issue.Subject };
-            var issueInfo = CreateIssueInfo(issueName, issue.Project);
-            issueInfo.HasOpenStatus = this.GetHasOpenFlagFromStatus(issue);
-            return issueInfo;
-        }
-
-        private bool? GetHasOpenFlagFromStatus(Issue issue)
-        {
-            bool? newStatus = null;
-            var projectId = issue.Project.Id;
-            if (this.ProjectsWithWatchedIssueStatus.Contains(projectId))
-            {
-                var isClosed = issue.Status.Id == 6 || issue.Status.Id == 9;
-                newStatus = !isClosed;
-            }
-
-            return newStatus;
-        }
-
-        /// <summary>
-        /// Method to create an issue info object from the api object
-        /// </summary>
-        /// <param name="issue">the issue obtained from the api</param>
-        /// <param name="project">optional project parameter</param>
-        /// <returns>the issue which can be used for the application</returns>
-        private static IssueInfo CreateIssueInfo(IdentifiableName issue, IdentifiableName project)
-        {
-            return new IssueInfo() { Id = issue.Id, Name = issue.Name, ProjectShortName = project.Name, ProjectId = project.Id };
-        }
-
-        /// <summary>
-        /// Method to create an issue info object from the api object
-        /// </summary>
-        /// <param name="te">the time entry obtained from the api</param>
-        /// <returns>the issue which can be used for the application</returns>
-        private IssueInfo CreateIssueInfo(TimeEntry te)
-        {
-            return CreateIssueInfo(te.Issue, te.Project);
-        }
-
-        
-        #endregion
     }
 }

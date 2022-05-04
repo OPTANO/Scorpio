@@ -53,7 +53,6 @@
             this.colIssueName = new DevExpress.XtraGrid.Columns.GridColumn();
             this.colProjectName = new DevExpress.XtraGrid.Columns.GridColumn();
             this.colIssueId = new DevExpress.XtraGrid.Columns.GridColumn();
-            this.colIssueStatus = new DevExpress.XtraGrid.Columns.GridColumn();
             this.lnkIssue = new System.Windows.Forms.LinkLabel();
             this.lnkProject = new System.Windows.Forms.LinkLabel();
             this.layoutControlGroup1 = new DevExpress.XtraLayout.LayoutControlGroup();
@@ -179,8 +178,7 @@
             this.colIssueString,
             this.colIssueName,
             this.colProjectName,
-            this.colIssueId,
-            this.colIssueStatus});
+            this.colIssueId});
             this.searchLookUpEdit1View.FocusRectStyle = DevExpress.XtraGrid.Views.Grid.DrawFocusRectStyle.RowFocus;
             this.searchLookUpEdit1View.GroupCount = 1;
             this.searchLookUpEdit1View.Name = "searchLookUpEdit1View";
@@ -190,8 +188,7 @@
             this.searchLookUpEdit1View.OptionsView.ShowAutoFilterRow = true;
             this.searchLookUpEdit1View.OptionsView.ShowGroupPanel = false;
             this.searchLookUpEdit1View.SortInfo.AddRange(new DevExpress.XtraGrid.Columns.GridColumnSortInfo[] {
-            new DevExpress.XtraGrid.Columns.GridColumnSortInfo(this.colProjectName, DevExpress.Data.ColumnSortOrder.Ascending),
-            new DevExpress.XtraGrid.Columns.GridColumnSortInfo(this.colIssueStatus, DevExpress.Data.ColumnSortOrder.Descending)});
+            new DevExpress.XtraGrid.Columns.GridColumnSortInfo(this.colProjectName, DevExpress.Data.ColumnSortOrder.Ascending)});
             // 
             // colIssueString
             // 
@@ -223,15 +220,6 @@
             // 
             this.colIssueId.FieldName = "IssueId";
             this.colIssueId.Name = "colIssueId";
-            // 
-            // colIssueStatus
-            // 
-            this.colIssueStatus.Caption = "Status";
-            this.colIssueStatus.FieldName = "StatusString";
-            this.colIssueStatus.FilterMode = DevExpress.XtraGrid.ColumnFilterMode.DisplayText;
-            this.colIssueStatus.Name = "colIssueStatus";
-            this.colIssueStatus.Visible = true;
-            this.colIssueStatus.VisibleIndex = 2;
             // 
             // lnkIssue
             // 
@@ -446,7 +434,6 @@
         private System.Windows.Forms.BindingSource assignedToMeIssuesBinding;
         private System.Windows.Forms.TextBox searchLastIssues;
         private DevExpress.XtraLayout.LayoutControlItem layoutControlItem7;
-        private DevExpress.XtraGrid.Columns.GridColumn colIssueStatus;
 
         public partial class AppointmentRedmineRegionFactory : Microsoft.Office.Tools.Outlook.IFormRegionFactory
         {

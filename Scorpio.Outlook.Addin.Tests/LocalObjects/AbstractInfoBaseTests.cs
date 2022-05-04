@@ -72,7 +72,7 @@ namespace Scorpio.Outlook.Addin.Tests.LocalObjects
             var areEqual = object.Equals(projectInfoTwo, projectInfoOne);
 
             // assert
-            Assert.That(areEqual, Is.True);
+            Assert.That(areEqual, Is.False);
         }
 
         /// <summary>

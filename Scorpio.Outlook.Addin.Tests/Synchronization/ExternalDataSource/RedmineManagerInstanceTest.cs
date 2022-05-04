@@ -99,6 +99,22 @@ namespace Scorpio.Outlook.Addin.Tests.Synchronization.ExternalDataSource
         }
 
         /// <summary>
+        /// Test for getting all issues assinged to me
+        /// </summary>
+        [Test]
+        public void TestGetAllIssuesAssignedToMe()
+        {
+            var manager = new RedmineManagerInstance(Url, ApiKey);
+            var parameters = new DataSourceParameter() { AssignedToUserId = -1 };
+
+            // act
+            var issues = manager.GetIssueInfoList(parameters);
+
+            // assert
+            Assert.That(issues.Count, Is.GreaterThan(0));
+        }
+
+        /// <summary>
         /// Method to test the download of the issues with a limit set as parameter
         /// </summary>
         [Test]
@@ -366,7 +382,7 @@ namespace Scorpio.Outlook.Addin.Tests.Synchronization.ExternalDataSource
 
             var timeEntryInfo = new TimeEntryInfo()
                                     {
-                                        Id = -5,
+                                        Id = null,
                                         Name = "CreateAndDeleteTest",
                                         StartDateTime = new DateTime(2016, 7, 8, 10, 0, 0),
                                         EndDateTime = new DateTime(2016, 7, 8, 12, 15, 0, 0),
@@ -401,7 +417,7 @@ namespace Scorpio.Outlook.Addin.Tests.Synchronization.ExternalDataSource
 
             var timeEntryInfo = new TimeEntryInfo()
             {
-                Id = -5,
+                Id = null,
                 Name = "CreateAndDeleteTest",
                 StartDateTime = new DateTime(2016, 7, 8, 10, 0, 0),
                 EndDateTime = new DateTime(2016, 7, 8, 12, 15, 0, 0),

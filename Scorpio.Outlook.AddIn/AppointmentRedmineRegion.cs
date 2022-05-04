@@ -392,18 +392,6 @@ namespace Scorpio.Outlook.AddIn
                         // we do not have to cancel, because the item is being created in the redmine calendar.
                         return;
                     }
-                    else if (string.IsNullOrEmpty(parent.EntryID))
-                    {
-                        Log.Info("Redmine Region will not be shown, because parent.EntryID is empty");   
-                    }
-                    else if (string.IsNullOrEmpty(Globals.ThisAddIn.RedmineCalendar.EntryID))
-                    {
-                        Log.Info("Redmine Region will not be shown, because RedmineCalendar.EntryID is empty");
-                    }
-                }
-                else
-                {
-                    Log.Info("Redmine Region will not be shown, because the OutlookItem is null.");
                 }
 
                 // The item is not in the redmine calendar, thus cancel showing the form region.
@@ -416,8 +404,8 @@ namespace Scorpio.Outlook.AddIn
         /// <summary>
         /// Method to search in the last used issues list.
         /// </summary>
-        /// <param name="sender">the event sender</param>
-        /// <param name="e">the event</param>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void searchLastIssues_TextChanged(object sender, EventArgs e)
         {
             this.lastUsedIssuesBindingSource.DataSource = Globals.ThisAddIn.Synchronizer.LastUsedIssues.Where(i => i.DisplayValue.ContainsAllWords(this.searchLastIssues.Text));
@@ -440,6 +428,5 @@ namespace Scorpio.Outlook.AddIn
             ((lc.Items[0] as LayoutControlGroup).Items[2] as LayoutControlGroup).Items[0].Visibility = DevExpress.XtraLayout.Utils.LayoutVisibility.Never;
             
         }
-        
     }
 }

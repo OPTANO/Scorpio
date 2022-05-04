@@ -77,28 +77,6 @@ namespace Scorpio.Outlook.AddIn.UserInterface.RibbonBars
             formRegions.AppointmentRedmineRegion?.FocusIssueSelection();
         }
 
-
-        /// <summary>
-        /// Returns True, when the current appointment window belongs to the redmine calendar.
-        /// </summary>
-        /// <param name="control">The RibbonCOntrol</param>
-        /// <returns>True when the ribbon should be shown</returns>
-        public bool ShowScorpioTab(Office.IRibbonControl control)
-        {
-
-            // Try to get the current inspector
-            var inspector = Globals.ThisAddIn.Application.ActiveInspector();
-
-            // If it is null, there is no appointment inspector open
-            if (inspector == null)
-            {
-                return false;
-            }
-            // If the appointment redmine region is null, the current item does not belong to our redmine calendar
-            var formRegions = Globals.FormRegions[inspector];
-            var redmineRegion = formRegions?.AppointmentRedmineRegion;
-            return redmineRegion != null;
-        }
         #endregion
     }
 }

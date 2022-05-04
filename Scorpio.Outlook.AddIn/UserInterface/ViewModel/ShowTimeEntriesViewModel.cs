@@ -68,9 +68,9 @@ namespace Scorpio.Outlook.AddIn.UserInterface.ViewModel
         /// </summary>
         public ShowTimeEntriesViewModel()
         {
-            this.PropertyChanged += this.OnDatesChanges;
             this.EndDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
             this.BeginDate = this.EndDate.AddMonths(-1);
+            this.PropertyChanged += this.OnDatesChanges;
         }
 
         #endregion

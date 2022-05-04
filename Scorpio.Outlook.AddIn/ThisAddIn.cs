@@ -34,7 +34,6 @@ using Office = Microsoft.Office.Core;
 namespace Scorpio.Outlook.AddIn
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Net;
@@ -50,6 +49,8 @@ namespace Scorpio.Outlook.AddIn
 
     using Scorpio.Outlook.AddIn.Extensions;
     using Scorpio.Outlook.AddIn.Helper;
+    using Scorpio.Outlook.AddIn.Misc;
+    using Scorpio.Outlook.AddIn.Report;
     using Scorpio.Outlook.AddIn.Synchronization;
     using Scorpio.Outlook.AddIn.UserInterface.Controls;
     using Scorpio.Outlook.AddIn.UserInterface.RibbonBars;
@@ -82,11 +83,17 @@ namespace Scorpio.Outlook.AddIn
         /// The ribbon bar for this plugin.
         /// </summary>
         private ScorpioRibbon _ribbon;
-        
+
+        /// <summary>
+        /// The report creator which creates the monthly report.
+        /// </summary>
+        private ReportCreator _reportCreator;
+
         /// <summary>
         /// The custom task pane as known by outlook.
         /// </summary>
-        private ConcurrentDictionary<Explorer, CustomTaskPane> _taskPanes;
+        private CustomTaskPane _customTaskPane;
+
         #endregion
 
         #region Properties
@@ -133,7 +140,8 @@ namespace Scorpio.Outlook.AddIn
             var primaryCalendar = this.Application.ActiveExplorer().Session.GetDefaultFolder(OlDefaultFolders.olFolderCalendar);
             Application.ActiveExplorer().SelectFolder(primaryCalendar.Folders[CalendarName]);
             Application.ActiveExplorer().CurrentFolder.Display();
-            
+
+            var view = primaryCalendar.CurrentView;
         }
 
         /// <summary>
@@ -145,25 +153,21 @@ namespace Scorpio.Outlook.AddIn
         }
 
         #endregion
-        
+
+        /// <summary>
+        /// Triggers the calculations for the monthly report.
+        /// </summary>
+        public void CalculateMonthlyReport()
+        {
+            this._reportCreator.CalculateMonthlyReport(this.Synchronizer, this.Application);
+        }
+
         /// <summary>
         /// Shows the scorpio task pane.
         /// </summary>
         public void ShowTaskPane()
         {
-            var activeExplorer = this.Application.ActiveExplorer();
-            CustomTaskPane currentTaskPane;
-            // Sometimes a new Explorer doesn't get a TaskPane while creation (don't now why, the newExplorer-Event just dosen't fire)
-            // So, we check that here add a new TaskPane if necessary.
-            if (this._taskPanes.TryGetValue(activeExplorer, out currentTaskPane))
-            {
-                currentTaskPane.Visible = true;
-            }
-            else
-            {
-                Log.Info("Active explorer doesn't have a TaskPane!");
-                this.CreateCustomTaskPane(activeExplorer);
-            }
+            this._customTaskPane.Visible = true;
         }
 
         /// <summary>
@@ -206,12 +210,18 @@ namespace Scorpio.Outlook.AddIn
                 // Configure Log4net
                 log4net.Config.XmlConfigurator.Configure();
                 Log.Info(string.Format("SCORPIO plugin configured Log4Net after {0} ms", stopwatch.ElapsedMilliseconds));
-                
+
+                this._reportCreator = new ReportCreator();
+
                 // init the plugin logic
                 this.CheckRequirements(this.Application.ActiveExplorer());
                 Log.Info(string.Format("SCORPIO plugin created necessary Outlook Objects after {0} ms", stopwatch.ElapsedMilliseconds));
-
-                this.InitTaskPanes();
+                
+                // Initialization of the task pane takes about 2 seconds. Therefore, schedule it to the ui 
+                // thread for later execution to not slow down plugin startup times.
+                var uiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
+                var taskPaneTask = new Task(this.CreateCustomTaskPane);
+                taskPaneTask.Start(uiScheduler);
 
                 Log.Info(string.Format("SCORPIO plugin created task pane after {0} ms", stopwatch.ElapsedMilliseconds));
                 Log.Info(string.Format("SCORPIO plugin successfully initialized in {0} ms", stopwatch.ElapsedMilliseconds));
@@ -229,70 +239,26 @@ namespace Scorpio.Outlook.AddIn
         }
 
         /// <summary>
-        /// Initializes the TaskPanes for every Explorer-Window
-        /// </summary>
-        private void InitTaskPanes()
-        {
-            // Since Outlook is a 'Singleton' Application it is not enough to add just one TaskPane on AddIn initilization.
-            // Rather we need to add a TaskPane to every Explorer Window that is currently open, or will be opened.
-            this._taskPanes = new ConcurrentDictionary<Explorer, CustomTaskPane>();
-
-            // Initialization of the task pane takes about 2 seconds. Therefore, schedule it to the ui 
-            // thread for later execution to not slow down plugin startup times.
-            var uiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
-            var taskPaneTask = new Task(
-                () =>
-                    {
-                        foreach (Explorer expl in this.Application.Explorers)
-                        {
-                            this.CreateCustomTaskPane(expl);
-                        }
-                    });
-            taskPaneTask.Start(uiScheduler);
-
-            this.Application.Explorers.NewExplorer += explorer =>
-                {
-                    this.CreateCustomTaskPane(explorer);
-                };
-
-        }
-
-        /// <summary>
         /// Method that creates and initializes the custom task pane.
         /// </summary>
-        /// <param name="expl">The Explorer-Window</param>
-        private void CreateCustomTaskPane(Explorer expl)
+        private void CreateCustomTaskPane()
         {
             try
             {
                 var taskPaneContainer = new ScorpioTaskPaneContainer();
-                var tmpcustomTaskPane = this.CustomTaskPanes.Add(taskPaneContainer, "SCORPIO", expl);
-                tmpcustomTaskPane.DockPositionRestrict = Office.MsoCTPDockPositionRestrict.msoCTPDockPositionRestrictNoChange;
-                tmpcustomTaskPane.DockPosition = Office.MsoCTPDockPosition.msoCTPDockPositionRight;
-                tmpcustomTaskPane.Visible = true;
-                tmpcustomTaskPane.Width = 118;
+                this._customTaskPane = this.CustomTaskPanes.Add(taskPaneContainer, "SCORPIO");
+                this._customTaskPane.DockPositionRestrict = Office.MsoCTPDockPositionRestrict.msoCTPDockPositionRestrictNoChange;
+                this._customTaskPane.DockPosition = Office.MsoCTPDockPosition.msoCTPDockPositionRight;
+                this._customTaskPane.Visible = true;
+                this._customTaskPane.Width = 118;
                 this.ScorpioViewModel = new ScorpioTaskPaneViewModel();
                 taskPaneContainer.TaskPane.DataContext = this.ScorpioViewModel;
-                this._taskPanes.TryAdd(expl, tmpcustomTaskPane);
-                // Cast explorer to the event interface, because the event has the same nam as the Close method.
-                ((ExplorerEvents_10_Event)expl).Close += () => this.ClearSideBarForExplorer(expl);
-                
             }
             catch (Exception ex)
             {
                 Log.Error("SCORPIO could not initialize the task pane.", ex);
                 throw;
             }
-        }
-
-        /// <summary>
-        /// Clearing of task pane of no longer needed explorer
-        /// </summary>
-        /// <param name="expl">the explorer closed</param>
-        private void ClearSideBarForExplorer(Explorer expl)
-        {
-            CustomTaskPane taskPane;
-            this._taskPanes.TryRemove(expl, out taskPane);
         }
 
         /// <summary>
@@ -384,7 +350,9 @@ namespace Scorpio.Outlook.AddIn
             this.RedmineCalendar = OutlookHelper.CreateOrGetFolder(primaryCalendar, CalendarName, OlDefaultFolders.olFolderCalendar);
             OutlookHelper.CreateScorpioUserDefinedProperties(this.RedmineCalendar);
             OutlookHelper.CreateScorpioCategories();
-            
+
+            this._reportCreator.CheckRequirements(currentExplorer);
+
             // create new state objects
             this.CalendarState = new CalendarState();
             this.SyncState = new SyncState();
@@ -429,14 +397,5 @@ namespace Scorpio.Outlook.AddIn
         }
 
         #endregion
-
-        /// <summary>
-        /// Method to refresh the status of the tickets. Only tickets corresponding to the projects set in the settings are refreshed.
-        /// </summary>
-        public void RefreshIssueStatus()
-        {
-            // trigger the refresh of the ticket status
-            this.Synchronizer.RefreshIssueStatus();
-        }
     }
 }

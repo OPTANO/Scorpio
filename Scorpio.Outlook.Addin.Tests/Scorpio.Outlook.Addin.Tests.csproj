@@ -66,6 +66,7 @@
     <Compile Include="Synchronization\ExternalDataSource\Exceptions\ConnectionExceptionTests.cs" />
     <Compile Include="Synchronization\ExternalDataSource\ExternalDataSourceFactoryTests.cs" />
     <Compile Include="Synchronization\ExternalDataSource\RedmineManagerInstanceTest.cs" />
+    <Compile Include="Synchronization\DownloadHelperTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Scorpio.Outlook.AddIn\Scorpio.Outlook.AddIn.csproj">

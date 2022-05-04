@@ -32,8 +32,5 @@
     <Setting Name="NumberLastUsedIssues" Provider="Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">15</Value>
     </Setting>
-    <Setting Name="WatchedProjects" Provider="Scorpio.Outlook.AddIn.Misc.ScorpioSettingsProvider" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
   </Settings>
 </SettingsFile>

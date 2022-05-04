@@ -64,9 +64,10 @@ namespace Scorpio.Outlook.AddIn.UserInterface.RibbonBars
             {
                 return Globals.ThisAddIn.Synchronizer.CanSyncTimeEntries && Globals.ThisAddIn.CalendarState.CalendarView != null;
             }
-            if (control.Id == "updateTicketStatus")
+            if (control.Id == "createreport")
             {
-                return Globals.ThisAddIn.Synchronizer.CanSyncTimeEntries;
+                // TODO DS: reenable later. Used to be the same as for resetTimeEntries and saveTimeEntries.
+                return false;
             }
             return false;
         }
@@ -96,16 +97,21 @@ namespace Scorpio.Outlook.AddIn.UserInterface.RibbonBars
             {
                 case "saveTimeEntries":
                     return Properties.Resources.diskette;
+
                 case "resetTimeEntries":
                     return Properties.Resources.arrow_undo;
+
                 case "showCalendar":
                     return Properties.Resources.calendar;
+
                 case "connectRedmine":
                     return Properties.Resources.arrow_refresh;
+
                 case "showSettings":
                     return Properties.Resources.setting_tools;
-                case "updateTicketStatus":
-                    return Properties.Resources.refresh_all;
+
+                case "createreport":
+                    return Properties.Resources.report_user;
                 case "showTaskPane":
                     return Properties.Resources.application_side_expand;
                 case "createSingle":
@@ -191,12 +197,13 @@ namespace Scorpio.Outlook.AddIn.UserInterface.RibbonBars
         }
 
         /// <summary>
-        /// Called when the user presses the button for updating the ticket status
+        /// Called when the user presses the button for creating the monthly report of work time.
         /// </summary>
         /// <param name="control">The control which was pressed.</param>
-        public void OnIssueStatus(IRibbonControl control)
+        public void OnReport(IRibbonControl control)
         {
-            Globals.ThisAddIn.RefreshIssueStatus();
+            // TODO Datum des aktuell gewählten Tag
+            Globals.ThisAddIn.CalculateMonthlyReport();
         }
 
         /// <summary>
@@ -270,7 +277,7 @@ namespace Scorpio.Outlook.AddIn.UserInterface.RibbonBars
             this.ribbon.InvalidateControl("connectRedmine");
             this.ribbon.InvalidateControl("saveTimeEntries");
             this.ribbon.InvalidateControl("resetTimeEntries");
-            this.ribbon.InvalidateControl("updateTicketStatus");
+            this.ribbon.InvalidateControl("createreport");
         }
 
         /// <summary>

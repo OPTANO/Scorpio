@@ -16,8 +16,8 @@
           <button id="createSingle" label="Einfacher Zeiteintrag" onAction="OnCreateSingle" getImage="GetRibbonImage" size="large" screentip="Erstellt eine neue Zeitbuchung und öffnet die Terminansicht."/>
           <button id="createRecurring" label="Wiederholende Zeiteinträge" onAction="OnCreateRecurring" getImage="GetRibbonImage" size="large" screentip="Ermöglicht, Serienbuchungen zu erstellen, z.B. für Urlaub, Krankheit, Abwesenheit etc."/>
         </group>
-        <group id="ticketStatusGroup" label="Ticketstatus">
-          <button id="updateTicketStatus" label ="Ticketstatus aktualisieren" onAction="OnIssueStatus" size="large" getImage="GetRibbonImage" getEnabled="GetConnectEnabled" screentip="aktualisiert den Ticketstatus für alle in den Einstellungen angegebenen Projekte"/>
+        <group id="reportGroup" label="Stundenreport">
+          <button id="createreport" label ="Stundenreport erstellen" onAction="OnReport" size="large" getImage="GetRibbonImage" getEnabled="GetConnectEnabled" />
         </group>
         <group id="statusGroup" label="Status">
           <labelControl id="statusLabel" getLabel="GetStatusLabel" />
